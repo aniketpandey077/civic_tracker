@@ -1,0 +1,14 @@
+{
+  "name": "civictrack-platform",
+  "version": "1.0.0",
+  "description": "AI-Powered Citizen Grievance & Municipal Accountability Platform",
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web start",
+    "lint": "npm --prefix apps/web run lint"
+  },
+  "keywords": ["civic-tech", "nextjs", "yolov8", "leaflet", "accountability"],
+  "author": "CivicTrack Team",
+  "license": "MIT"
+}
