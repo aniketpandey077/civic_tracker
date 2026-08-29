@@ -1,263 +1,303 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Building2,
   Wrench,
   Upload,
   CheckCircle,
   AlertTriangle,
-  Play,
-  RotateCcw,
+  MapPin,
+  Camera,
+  Navigation,
+  Clock,
   Sparkles,
+  RefreshCw,
+  Search,
+  Filter,
   ShieldCheck,
-  RefreshCw
+  CheckCircle2,
+  ArrowRight
 } from 'lucide-react';
-import { getStoredIssues, updateIssueStatus, saveStoredIssues } from '@/lib/store';
-import { INITIAL_ISSUES } from '@/lib/seedData';
-import { CivicIssue, IssueStatus } from '@/lib/types';
+import { getStoredIssues, updateIssueStatus } from '@/lib/store';
+import { CivicIssue } from '@/lib/types';
+import { useUserLocation } from '@/lib/useUserLocation';
+import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
 import EvidenceModal from '@/components/EvidenceModal';
 
-export default function DepartmentPage() {
+export default function DepartmentResolverPage() {
   const [mounted, setMounted] = useState(false);
-  const [issues, setIssues] = useState<CivicIssue[]>([]);
-  const [selectedIssue, setSelectedIssue] = useState<CivicIssue | null>(null);
-  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('all');
-  const [statusNote, setStatusNote] = useState('');
-  const [escalationResult, setEscalationResult] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [search, setSearch] = useState<string>('');
+  const [selectedIssueForResolution, setSelectedIssueForResolution] = useState<CivicIssue | null>(null);
 
+  const userLocation = useUserLocation();
 
   const loadIssues = () => {
-    // If any issue in storage has the old dummy photos, refresh from clean seed
-    const stored = getStoredIssues();
-    const hasCorruptedPhotos = stored.some(i => i.photo_url.includes('09198397868') || i.photo_url.includes('578328819058'));
-    if (hasCorruptedPhotos) {
-      saveStoredIssues(INITIAL_ISSUES);
-      setIssues(INITIAL_ISSUES);
-    } else {
-      setIssues(stored);
-    }
+    setRawIssues(getStoredIssues());
   };
 
   useEffect(() => {
     setMounted(true);
     loadIssues();
-  }, []);
 
-  const resetToFreshData = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('civictrack_issues');
-      localStorage.removeItem('civictrack_evidence');
-    }
-    saveStoredIssues(INITIAL_ISSUES);
-    setIssues(INITIAL_ISSUES);
-  };
-
-  const filteredIssues = issues.filter(i => {
-    if (selectedDept !== 'all') {
-      if (selectedDept === 'DISCOM' && (i.department.toLowerCase().includes('vidyut') || i.department.toLowerCase().includes('discom') || i.department.toLowerCase().includes('electricity'))) {
-        return true;
-      }
-      if (!i.department.toLowerCase().includes(selectedDept.toLowerCase())) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  const handleAdvanceStatus = (issueId: string, nextStatus: IssueStatus) => {
-    updateIssueStatus(
-      issueId,
-      nextStatus,
-      statusNote || `Department maintenance unit progressed status to ${nextStatus}.`,
-      'Municipal Field Engineer'
-    );
-    setStatusNote('');
-    loadIssues();
-  };
-
-  const handleRunEscalationCheck = async () => {
-    try {
-      const res = await fetch('/api/v1/internal/escalation-check', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        setEscalationResult(`Escalation scheduler ran: ${data.escalated_count} overdue tickets escalated to public leaderboard.`);
-        loadIssues();
-      }
-    } catch {
-      setEscalationResult('Escalation check completed.');
+    const handleStoreUpdate = () => {
       loadIssues();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('civictrack_store_updated', handleStoreUpdate);
     }
-  };
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('civictrack_store_updated', handleStoreUpdate);
+      }
+    };
+  }, []);
 
   if (!mounted) return null;
 
-    return (
+  // Sort issues nearest to farthest relative to user's live GPS coordinates
+  const sortedIssues: SortedCivicIssue[] = sortIssuesByNearest(
+    userLocation.latitude,
+    userLocation.longitude,
+    rawIssues
+  );
+
+  const filtered = sortedIssues.filter((issue) => {
+    // Status filter
+    if (statusFilter === 'active' && issue.status === 'resolved') return false;
+    if (statusFilter !== 'all' && statusFilter !== 'active' && issue.status !== statusFilter) return false;
+
+    // Dept filter
+    if (selectedDept !== 'all') {
+      if (!issue.department.toLowerCase().includes(selectedDept.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // Search query
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (
+        issue.complaint_number.toLowerCase().includes(q) ||
+        issue.title.toLowerCase().includes(q) ||
+        issue.zone_name.toLowerCase().includes(q) ||
+        issue.department.toLowerCase().includes(q) ||
+        issue.category.toLowerCase().includes(q)
+      );
+    }
+
+    return true;
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'resolved':
+        return 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700';
+      case 'in_progress':
+        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700';
+      case 'verified':
+        return 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700';
+      default:
+        return 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700';
+    }
+  };
+
+  return (
     <div className="space-y-6 pb-12">
-      {/* Header with Simulated Banner */}
-      <div className="glass-card border border-[#D95F02]/30 rounded-3xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center space-x-3">
-          <span className="p-2.5 rounded-xl bg-[#D95F02] text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20">
-            <Building2 className="w-5 h-5 text-slate-950" />
-          </span>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-base sm:text-lg font-extrabold text-white">
-                Department Field Staff Portal
-              </h1>
-              <span className="text-[10px] font-extrabold uppercase bg-amber-950/80 text-amber-300 border border-[#D95F02]/40 px-2 py-0.5 rounded-full">
-                Simulated Demo
-              </span>
-            </div>
-            <p className="text-xs text-[#6B6860] mt-0.5">
-              Interactive interface for judges to simulate department work orders and upload Resolution Evidence
-            </p>
+      {/* Resolver Header Banner */}
+      <div className="bg-white dark:bg-[#151C2C] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-7 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <span className="p-2 rounded-xl bg-emerald-600 text-white shadow-sm">
+              <Wrench className="w-5 h-5" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+              Department Field Resolver
+            </h1>
+            <span className="text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-700">
+              Proximity Dispatched
+            </span>
           </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Defects automatically sorted by GPS distance from your current location ({userLocation.city.toUpperCase()}). Resolve defects on-site with live camera proof.
+          </p>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0">
-          <button
-            type="button"
-            onClick={resetToFreshData}
-            className="px-3.5 py-2 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#4B5563] text-xs font-semibold rounded-xl border border-[#C9C4BA] transition-colors flex items-center space-x-1.5"
-            title="Reset to fresh realistic seed photos"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-[#D95F02]" />
-            <span>Reset Demo Data</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleRunEscalationCheck}
-            className="px-4 py-2 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 text-xs font-extrabold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5"
-          >
-            <Play className="w-3.5 h-3.5 text-slate-950" />
-            <span>Simulate Daily Escalation Cron</span>
-          </button>
+        <div className="flex items-center space-x-2 text-xs font-mono bg-slate-50 dark:bg-slate-800 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <Navigation className="w-4 h-4 text-emerald-600 animate-pulse" />
+          <span className="font-bold text-slate-800 dark:text-slate-200">
+            GPS: {userLocation.latitude.toFixed(4)}°N, {userLocation.longitude.toFixed(4)}°E
+          </span>
         </div>
       </div>
 
-      {escalationResult && (
-        <div className="p-3.5 bg-[#FEF2F2]/80 border border-[#B91C1C] rounded-xl text-xs font-semibold text-[#B91C1C] flex items-center justify-between shadow-lg">
-          <span>{escalationResult}</span>
-          <button onClick={() => setEscalationResult(null)} className="text-rose-400 hover:text-white">✕</button>
+      {/* Filter and Search Controls */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div className="sm:col-span-2 relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search nearby defects by docket #, ward, category..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-600"
+          />
+        </div>
+
+        <div>
+          <select
+            value={selectedDept}
+            onChange={(e) => setSelectedDept(e.target.value)}
+            className="w-full py-2.5 px-3 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white font-bold outline-none cursor-pointer"
+          >
+            <option value="all">All Departments</option>
+            <option value="Roads">Roads & Public Works</option>
+            <option value="Sanitation">Solid Waste & Sanitation</option>
+            <option value="Drainage">Storm Water & Drainage</option>
+            <option value="Electricity">Electricity & Streetlights</option>
+            <option value="Water">Water Supply & Sewerage</option>
+          </select>
+        </div>
+
+        <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full py-2.5 px-3 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white font-bold outline-none cursor-pointer"
+          >
+            <option value="active">Active Queries Only ({rawIssues.filter(i => i.status !== 'resolved').length})</option>
+            <option value="all">All (Including Resolved)</option>
+            <option value="pending">Pending Field Inspection</option>
+            <option value="in_progress">Work in Progress</option>
+            <option value="resolved">Resolved Dockets</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Defect Cards Grid Sorted by Distance */}
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 space-y-3">
+          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+            No Nearby Defects in this Category
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            All municipal issues nearby have either been resolved or no tickets match the current search filters.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filtered.map((issue) => {
+            const isResolved = issue.status === 'resolved';
+
+            return (
+              <div
+                key={issue.id}
+                className="bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  {/* Top Bar with Docket & Distance */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-xs font-black text-[#1A56A4] dark:text-blue-400">
+                        {issue.complaint_number}
+                      </span>
+                      {/* Distance Badge */}
+                      <span className="inline-flex items-center space-x-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                        <MapPin className="w-3 h-3 text-emerald-600" />
+                        <span>{issue.distanceText}</span>
+                      </span>
+                    </div>
+
+                    <span
+                      className={`text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md border ${getStatusBadge(
+                        issue.status
+                      )}`}
+                    >
+                      {issue.status.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Photo & Defect Details */}
+                  <div className="flex space-x-3.5">
+                    <div className="w-24 h-24 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={issue.photo_url}
+                        alt={issue.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.2 rounded">
+                        DEFECT
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <h4 className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">
+                        {issue.title}
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold line-clamp-1">
+                        🏢 {issue.department}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <Navigation className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="line-clamp-1">{issue.zone_name || 'Ward Area'}</span>
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        Logged: {new Date(issue.reported_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Action: Resolve with Photo Button */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <Link
+                    href={`/track/${issue.complaint_number}`}
+                    className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-[#1A56A4] dark:hover:text-blue-400 flex items-center gap-1"
+                  >
+                    <span>View Docket</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {isResolved ? (
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span>Repair Verified</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIssueForResolution(issue)}
+                      className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>Resolve & Upload After Photo</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Department Filter */}
-      <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] shadow-lg flex items-center space-x-3">
-        <span className="text-xs font-bold text-[#4B5563]">Filter by Department:</span>
-        <select
-          value={selectedDept}
-          onChange={(e) => setSelectedDept(e.target.value)}
-          className="text-xs bg-[#F0EEE9] border border-[#C9C4BA] rounded-xl px-3.5 py-2 font-semibold outline-none focus:border-[#D95F02] text-[#2D3340]"
-        >
-          <option value="all">All Municipal Departments</option>
-          <option value="PWD">Public Works Department (PWD)</option>
-          <option value="SWM">Solid Waste Management (SWM)</option>
-          <option value="DISCOM">Electricity Board (Discom / Power Dept)</option>
-          <option value="PHED">Public Health Engineering (PHED)</option>
-          <option value="Drainage">Municipal Drainage & Sewerage</option>
-        </select>
-      </div>
-
-      {/* Ticket Management Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredIssues.map((issue) => (
-          <div
-            key={issue.id}
-            className="glass-card glass-card-hover rounded-2xl p-5 border border-[#C9C4BA] flex flex-col justify-between space-y-4 shadow-xl"
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="font-mono-data text-xs font-bold text-[#2D3340] bg-[#F0EEE9] px-2.5 py-0.5 rounded-lg border border-[#C9C4BA]">
-                    {issue.complaint_number}
-                  </span>
-                  <h3 className="text-sm font-extrabold text-[#1E2328] mt-2 leading-snug">{issue.title}</h3>
-                </div>
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-[#EEF4FF] text-[#1A56A4] border border-cyan-800 capitalize">
-                  {issue.status.replace('_', ' ')}
-                </span>
-              </div>
-
-              <div className="flex items-center space-x-3 text-xs text-[#6B6860] font-medium">
-                <span className="text-[#D95F02]">📍 {issue.zone_name}</span>
-                <span>•</span>
-                <span className="text-[#1A56A4] font-semibold">{issue.department}</span>
-              </div>
-
-              <div className="aspect-video rounded-xl overflow-hidden border border-[#C9C4BA] bg-[#F0EEE9]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={issue.photo_url}
-                  alt={issue.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Department Actions */}
-            <div className="pt-3 border-t border-[#C9C4BA] space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                {issue.status === 'pending' && (
-                  <button
-                    type="button"
-                    onClick={() => handleAdvanceStatus(issue.id, 'assigned')}
-                    className="py-2 px-3 bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-extrabold rounded-xl transition-all"
-                  >
-                    Assign Field Crew
-                  </button>
-                )}
-
-                {(issue.status === 'pending' || issue.status === 'assigned') && (
-                  <button
-                    type="button"
-                    onClick={() => handleAdvanceStatus(issue.id, 'in_progress')}
-                    className="py-2 px-3 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 text-xs font-extrabold rounded-xl transition-all"
-                  >
-                    Mark In Progress
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedIssue(issue);
-                    setIsEvidenceModalOpen(true);
-                  }}
-                  className="py-2 px-3 bg-[#176B3A] hover:bg-emerald-400 text-slate-950 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center space-x-1.5"
-                >
-                  <Upload className="w-3.5 h-3.5 text-slate-950" />
-                  <span>Upload Evidence</span>
-                </button>
-
-                {issue.status === 'resolved' && (
-                  <button
-                    type="button"
-                    onClick={() => handleAdvanceStatus(issue.id, 'in_progress')}
-                    className="py-2 px-3 bg-[#C9C4BA] hover:bg-slate-700 text-[#2D3340] text-xs font-semibold rounded-xl border border-[#C9C4BA] transition-all flex items-center justify-center space-x-1"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-[#D95F02]" />
-                    <span>Reopen Ticket</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {selectedIssue && (
+      {/* RESOLUTION EVIDENCE MODAL */}
+      {selectedIssueForResolution && (
         <EvidenceModal
-          issue={selectedIssue}
-          isOpen={isEvidenceModalOpen}
-          onClose={() => {
-            setIsEvidenceModalOpen(false);
-            setSelectedIssue(null);
+          issue={selectedIssueForResolution}
+          isOpen={!!selectedIssueForResolution}
+          onClose={() => setSelectedIssueForResolution(null)}
+          onSubmitted={() => {
+            loadIssues();
+            setSelectedIssueForResolution(null);
           }}
-          onSubmitted={loadIssues}
         />
       )}
     </div>

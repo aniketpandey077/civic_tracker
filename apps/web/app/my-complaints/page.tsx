@@ -18,12 +18,15 @@ import {
   Navigation,
   ShieldAlert,
   Wrench,
-  Sparkles
+  Sparkles,
+  LogIn,
+  Lock,
+  ExternalLink
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue } from '@/lib/store';
 import { CivicIssue } from '@/lib/types';
-import { useUserLocation } from '@/lib/useUserLocation';
-import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
+import { useAuth } from '@/lib/authContext';
+import LoginModal from '@/components/LoginModal';
 import EvidenceModal from '@/components/EvidenceModal';
 
 export default function MyComplaintsPage() {
@@ -32,8 +35,9 @@ export default function MyComplaintsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
 
-  const userLocation = useUserLocation();
+  const { user, signInWithGoogle } = useAuth();
 
   const loadIssues = () => {
     setRawIssues(getStoredIssues());
@@ -60,21 +64,49 @@ export default function MyComplaintsPage() {
 
   if (!mounted) return null;
 
-  const handleUpvote = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    upvoteIssue(id);
-    loadIssues();
-  };
+  // If user is NOT logged in, show auth prompt to view their reports
+  if (!user) {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-4 text-center space-y-6">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1A56A4] to-[#176B3A] text-white flex items-center justify-center mx-auto shadow-xl">
+          <Lock className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Sign In to View Your Reports
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+            Please log in with Google to view and track all municipal grievances filed from your verified account.
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={signInWithGoogle}
+            className="inline-flex items-center space-x-2 px-6 py-3.5 bg-[#1A56A4] hover:bg-[#134688] text-white font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 cursor-pointer"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Continue with Google</span>
+          </button>
+        </div>
+        <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+      </div>
+    );
+  }
 
-  // Sort issues nearest to farthest relative to user's live GPS coordinates
-  const sortedIssues: SortedCivicIssue[] = sortIssuesByNearest(
-    userLocation.latitude,
-    userLocation.longitude,
-    rawIssues
-  );
+  // Filter issues registered by the current logged-in user
+  const userIdentifier = user.displayName?.toLowerCase() || user.email?.toLowerCase() || '';
+  const myIssues = rawIssues.filter((issue) => {
+    const reporter = (issue.reporter_name || '').toLowerCase();
+    const isOwner =
+      (user.email && reporter.includes(user.email.toLowerCase())) ||
+      (user.displayName && reporter.includes(user.displayName.toLowerCase())) ||
+      (userIdentifier && reporter.includes(userIdentifier)) ||
+      issue.has_upvoted;
+    return isOwner;
+  });
 
-  const filtered = sortedIssues.filter(issue => {
+  const filtered = myIssues.filter((issue) => {
     if (statusFilter !== 'all' && issue.status !== statusFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -88,217 +120,175 @@ export default function MyComplaintsPage() {
     return true;
   });
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'resolved':
+        return 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700';
+      case 'in_progress':
+        return 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700';
+      case 'verified':
+        return 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700';
+      default:
+        return 'bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-700';
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Location Sorting Context */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 rounded-xl bg-[#D95F02]/10 text-[#D95F02] border border-[#D95F02]/30">
-              <FileText className="w-5 h-5 text-[#D95F02]" />
+            <span className="p-2 rounded-xl bg-[#1A56A4]/10 text-[#1A56A4] dark:text-blue-400 border border-[#1A56A4]/30">
+              <FileText className="w-5 h-5" />
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E2328] tracking-tight">
-              Municipal Defect Docket Ledger
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E2328] dark:text-white tracking-tight">
+              My Reports & Grievances
             </h1>
           </div>
-          <p className="text-xs text-[#6B6860] font-medium mt-1">
-            Official civic grievances ordered from <strong className="text-[#D95F02] font-semibold">nearest to farthest</strong> relative to GPS fix ({userLocation.city}).
+          <p className="text-xs text-[#6B6860] dark:text-slate-400 mt-1">
+            Tracking grievances filed by <strong className="text-slate-900 dark:text-white">{user.displayName || user.email}</strong>
           </p>
         </div>
 
-        {/* New Complaint Action Button */}
         <Link
           href="/report"
-          className="px-5 py-2.5 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 text-xs font-extrabold rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center space-x-2 self-start sm:self-auto"
+          className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#B91C1C] hover:bg-[#991B1B] text-white font-extrabold text-xs shadow-md transition-all active:scale-95"
         >
-          <Camera className="w-4 h-4 text-slate-950" />
-          <span>+ File Defect Docket</span>
+          <PlusCircle className="w-4 h-4" />
+          <span>File New Grievance</span>
         </Link>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] shadow-lg flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-[#6B6860] absolute left-3.5 top-3" />
+      {/* Filters & Search */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="sm:col-span-2 relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by ticket # (CTR-2026...), title, category, or ward..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-medium text-[#1E2328] placeholder-slate-500"
+            placeholder="Search by docket #, keyword, ward..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:border-[#1A56A4]"
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-[#6B6860] shrink-0" />
+        <div className="flex items-center space-x-2">
+          <Filter className="w-4 h-4 text-slate-400" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3.5 py-2 text-xs bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-semibold text-[#2D3340] w-full sm:w-auto"
+            className="w-full py-2.5 px-3 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white font-bold outline-none cursor-pointer"
           >
-            <option value="all">All Statuses ({rawIssues.length})</option>
-            <option value="pending">Pending Inspection</option>
-            <option value="verified">Verified Field</option>
-            <option value="assigned">Assigned Contractor</option>
-            <option value="in_progress">Awaiting Citizen Vote</option>
-            <option value="resolved">Resolved & Confirmed</option>
+            <option value="all">All Statuses ({myIssues.length})</option>
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="verified">Field Verified</option>
+            <option value="resolved">Resolved</option>
           </select>
         </div>
       </div>
 
-      {/* Issues Grid (Sorted Nearest to Farthest) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(issue => {
-          const isResolved = issue.status === 'resolved';
-          const deadlineDate = new Date(issue.deadline_at);
-          const diffDays = Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-          const isOverdue = !isResolved && diffDays <= 0;
+      {/* Issue Cards */}
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
+          <FileText className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+              No Registered Grievances Found
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              You haven't filed any complaints yet. Capture photo evidence of any local defect to create an official municipal docket.
+            </p>
+          </div>
+          <Link
+            href="/report"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white font-bold text-xs rounded-xl shadow-md transition-all"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Report an Issue Now</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filtered.map((issue) => {
+            const deadline = new Date(issue.deadline_at);
+            const diffDays = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            const isResolved = issue.status === 'resolved';
 
-          const statusDisplayLabel = 
-            issue.status === 'resolved' ? 'Resolved & Verified' :
-            issue.status === 'in_progress' ? 'Awaiting Citizen Vote' :
-            issue.status === 'assigned' ? 'Assigned Contractor' :
-            issue.status === 'verified' ? 'Verified Field' : 'Pending Inspection';
-
-          if (!mounted) return null;
-
-    return (
-            <div
-              key={issue.id}
-              className="glass-card glass-card-hover rounded-2xl p-5 border border-[#C9C4BA] flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                {/* Header Badge Row */}
-                <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span className="text-xs font-mono-data font-bold text-[#2D3340] bg-[#E8E5DF] border border-[#C9C4BA] px-2 py-0.5 rounded-lg">
-                    {issue.complaint_number}
-                  </span>
-
-                  <div className="flex items-center space-x-1">
-                    {/* Proximity Distance Badge */}
-                    <span className="bg-[#E8E5DF] text-[#D95F02] border border-[#D95F02]/40 text-[10px] font-mono-data font-bold px-2 py-0.5 rounded-full flex items-center space-x-1">
-                      <Navigation className="w-3 h-3 text-[#D95F02] shrink-0" />
-                      <span>{issue.distanceFormatted}</span>
+            return (
+              <div
+                key={issue.id}
+                className="bg-white dark:bg-[#151C2C] rounded-3xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-black text-[#1A56A4] dark:text-blue-400">
+                      {issue.complaint_number}
                     </span>
-
-                    {/* AI Severity Badge */}
-                    {issue.ai_severity !== undefined && (
-                      <span
-                        className={`text-[9px] font-mono-data font-bold px-2 py-0.5 rounded-full border ${
-                          issue.ai_severity < 30
-                            ? 'bg-[#EDFBF0] text-[#176B3A] border-[#176B3A]'
-                            : issue.ai_severity <= 60
-                            ? 'bg-[#EEF4FF] text-[#1A56A4] border-cyan-800'
-                            : 'bg-amber-950 text-amber-300 border-amber-800'
-                        }`}
-                      >
-                        Sev: {issue.ai_severity}/100
-                      </span>
-                    )}
-
-                    {/* 45-Day Escalated Badge */}
-                    {issue.escalation_email_sent_at && (
-                      <span className="bg-[#FEF2F2] text-[#B91C1C] border border-[#B91C1C] text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                        45d Escalated
-                      </span>
-                    )}
-
-                    {isResolved ? (
-                      <span className="bg-[#EDFBF0] text-[#176B3A] border border-[#176B3A] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Resolved
-                      </span>
-                    ) : isOverdue ? (
-                      <span className="bg-amber-950 text-amber-300 border border-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3 text-[#D95F02]" /> Overdue
-                      </span>
-                    ) : (
-                      <span className="bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {statusDisplayLabel}
-                      </span>
-                    )}
+                    <span
+                      className={`text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-md border ${getStatusBadge(
+                        issue.status
+                      )}`}
+                    >
+                      {issue.status.replace('_', ' ')}
+                    </span>
                   </div>
-                </div>
 
-                {/* Photo Thumbnail + Info */}
-                <div className="flex space-x-3">
-                  <div className="w-20 h-20 bg-[#E8E5DF] shrink-0 border border-[#C9C4BA] rounded-xl overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={issue.photo_url}
-                      alt={issue.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <Link href={`/track/${issue.complaint_number}`}>
-                      <h3 className="text-xs font-extrabold text-[#1E2328] line-clamp-2 leading-snug hover:text-[#D95F02] transition-colors">
+                  <div className="flex space-x-3">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={issue.photo_url}
+                        alt={issue.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">
                         {issue.title}
-                      </h3>
-                    </Link>
-                    <p className="text-[11px] text-[#6B6860] line-clamp-1">{issue.description}</p>
-                    <div className="text-[10px] text-[#6B6860] font-medium flex items-center space-x-1">
-                      <MapPin className="w-3 h-3 text-[#D95F02] shrink-0" />
-                      <span className="truncate">{issue.zone_name}</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{issue.zone_name || 'Local Ward'}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        Logged: {new Date(issue.reported_at).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* SLA Countdown Bar */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[10px] text-[#6B6860] font-medium">
-                    <span>SLA Countdown: <strong className="font-mono-data text-[#D95F02]">{diffDays > 0 ? `${diffDays} days left` : 'Expired'}</strong></span>
-                    <span>{issue.upvote_count >= 500 ? '5-Day Emergency' : '15-Day Target'}</span>
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+                  <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <span>
+                      {isResolved ? 'Resolved' : `${diffDays} days SLA remaining`}
+                    </span>
                   </div>
-                  <div className="w-full h-1.5 bg-[#E8E5DF] rounded-full overflow-hidden border border-[#C9C4BA]">
-                    <div
-                      className={`h-full ${isOverdue ? 'bg-[#D95F02]' : isResolved ? 'bg-[#176B3A]' : 'bg-cyan-500'}`}
-                      style={{ width: `${Math.max(0, Math.min(100, (diffDays / 15) * 100))}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Footer: SLA, Fix Defect & Upvote */}
-              <div className="pt-3 border-t border-[#C9C4BA] flex items-center justify-between gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSelectedIssueForEvidence(issue)}
-                  className="px-3 py-1.5 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
-                >
-                  <Wrench className="w-3.5 h-3.5 text-slate-950" />
-                  <span>Resolve Defect</span>
-                </button>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={(e) => handleUpvote(issue.id, e)}
-                    className="flex items-center space-x-1 text-[#4B5563] hover:text-[#D95F02] bg-[#E8E5DF] hover:bg-[#C9C4BA] px-2 py-1 rounded-lg border border-[#C9C4BA] transition-colors"
-                  >
-                    <ThumbsUp className="w-3 h-3 text-[#D95F02]" />
-                    <span className="font-mono-data font-bold text-[11px]">{issue.upvote_count}</span>
-                  </button>
-
                   <Link
                     href={`/track/${issue.complaint_number}`}
-                    className="text-[#1A56A4] hover:text-[#1A56A4] font-bold text-xs flex items-center"
+                    className="inline-flex items-center space-x-1 text-[#1A56A4] dark:text-blue-400 hover:underline font-bold"
                   >
-                    Docket <ArrowRight className="w-3 h-3 ml-0.5" />
+                    <span>View Docket</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Modal for Fix Defect / Upload Repair Photo */}
       {selectedIssueForEvidence && (
         <EvidenceModal
           issue={selectedIssueForEvidence}
           isOpen={!!selectedIssueForEvidence}
           onClose={() => setSelectedIssueForEvidence(null)}
-          onSubmitted={loadIssues}
+          onSubmitted={() => {
+            loadIssues();
+            setSelectedIssueForEvidence(null);
+          }}
         />
       )}
     </div>

@@ -17,7 +17,8 @@ import {
   LogIn,
   LogOut,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Wrench
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
@@ -35,8 +36,9 @@ export default function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
 
   const navLinks = [
+    { href: '/my-complaints', label: 'My Reports', icon: FileText },
+    { href: '/department', label: 'Dept Resolver', icon: Wrench, tag: 'Nearby' },
     { href: '/map', label: 'GIS Map', icon: Map },
-    { href: '/my-complaints', label: 'Docket Registry', icon: FileText },
     { href: '/dashboard', label: 'SLA Board', icon: BarChart3 },
     ...(isAdmin ? [{ href: '/admin', label: 'Admin Command', icon: ShieldAlert, tag: 'Admin' }] : []),
   ];
