@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles, Navigation, LocateFixed } from 'lucide-react';
 import CameraCapture from './CameraCapture';
-import { DetectionResult } from '../lib/aiDetector';
+import { DetectionResult, AnalyzeApiResponse } from '../lib/aiDetector';
 import { matchZoneByCoordinates, reverseGeocodeReal, RealGeoAddress } from '../lib/zoneMatcher';
 import { generateComplaintNumber } from '../lib/complaintNumber';
 import { addIssue } from '../lib/store';
@@ -30,6 +30,7 @@ export default function ReportForm() {
   const [category, setCategory] = useState<IssueCategory>('pothole');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<DetectionResult | null>(null);
+  const [liveApiData, setLiveApiData] = useState<AnalyzeApiResponse | null>(null);
   const [description, setDescription] = useState('');
   const [title, setTitle] = useState('');
 
@@ -108,9 +109,16 @@ export default function ReportForm() {
     }
   };
 
-  const handlePhotoCaptured = (url: string, result: DetectionResult) => {
+  const handlePhotoCaptured = (
+    url: string,
+    result: DetectionResult,
+    apiResponse?: AnalyzeApiResponse
+  ) => {
     setPhotoUrl(url);
     setAiResult(result);
+    if (apiResponse) {
+      setLiveApiData(apiResponse);
+    }
 
     if (result.category && result.category !== category) {
       setCategory(result.category);
@@ -122,7 +130,8 @@ export default function ReportForm() {
     }
 
     const areaName = resolvedAddress?.road || resolvedAddress?.suburb || resolvedAddress?.city || 'Local Area';
-    setTitle(`${result.detected_class} near ${areaName}`);
+    const issueLabel = apiResponse?.issue_type ? apiResponse.issue_type.toUpperCase() : result.detected_class;
+    setTitle(`${issueLabel} near ${areaName}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,6 +140,11 @@ export default function ReportForm() {
 
     if (!photoUrl) {
       setErrorMsg('Please capture or select a photo of the defect before submitting.');
+      return;
+    }
+
+    if (liveApiData && !liveApiData.detected) {
+      setErrorMsg('AI model detected no civic issues in this photo. Please select or capture a photo showing a civic defect.');
       return;
     }
 

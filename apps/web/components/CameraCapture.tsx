@@ -1,11 +1,21 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, CheckCircle, AlertCircle, Sparkles, Upload, Video, SwitchCamera } from 'lucide-react';
-import { detectCivicIssue, DetectionResult } from '../lib/aiDetector';
+import { Camera, RefreshCw, AlertCircle, Upload, SwitchCamera } from 'lucide-react';
+import {
+  analyzeImageWithLiveApi,
+  AnalyzeApiResponse,
+  DetectionResult,
+  detectCivicIssue,
+} from '../lib/aiDetector';
+import DetectionResults from './DetectionResults';
 
 interface CameraCaptureProps {
-  onPhotoCaptured: (photoDataUrl: string, aiResult: DetectionResult) => void;
+  onPhotoCaptured: (
+    photoDataUrl: string,
+    aiResult: DetectionResult,
+    apiResponse?: AnalyzeApiResponse
+  ) => void;
   selectedCategory?: string;
 }
 
@@ -17,9 +27,11 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [detectionResult, setDetectionResult] = useState<DetectionResult | null>(null);
+  const [apiResult, setApiResult] = useState<AnalyzeApiResponse | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+  const [lastImageInput, setLastImageInput] = useState<File | Blob | string | null>(null);
 
   // 100% Authentic, verified civic infrastructure defect photos
   const samplePresets = [
@@ -157,7 +169,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
       ctx.drawImage(video, 0, 0, width, height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
       stopCamera();
-      processCapturedPhoto(dataUrl);
+      processPhotoInput(dataUrl, dataUrl);
     }
   };
 
@@ -168,33 +180,73 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        processCapturedPhoto(event.target.result as string);
+        const photoDataUrl = event.target.result as string;
+        processPhotoInput(file, photoDataUrl);
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const processCapturedPhoto = async (photoUrl: string) => {
-    setCapturedPhoto(photoUrl);
-    setIsAnalyzing(true);
-    setDetectionResult(null);
-
-    const result = await detectCivicIssue(photoUrl, selectedCategory);
-    setDetectionResult(result);
-    setIsAnalyzing(false);
-
-    onPhotoCaptured(photoUrl, result);
-  };
-
   const selectPreset = (presetUrl: string, category: string) => {
     stopCamera();
-    processCapturedPhoto(presetUrl);
+    processPhotoInput(presetUrl, presetUrl);
+  };
+
+  const processPhotoInput = async (imageInput: File | Blob | string, displayPhotoUrl: string) => {
+    setCapturedPhoto(displayPhotoUrl);
+    setLastImageInput(imageInput);
+    setIsAnalyzing(true);
+    setApiError(null);
+    setApiResult(null);
+
+    const targetCategory = selectedCategory || 'pothole';
+
+    try {
+      // 1. Call live backend API (POST https://civicpulse-ai-95na.onrender.com/analyze?issue_type=...)
+      const liveData = await analyzeImageWithLiveApi(imageInput, targetCategory);
+      setApiResult(liveData);
+
+      // 2. Build compatibility detection object for legacy state
+      const legacyResult: DetectionResult = {
+        is_civic_issue: liveData.detected,
+        detected_class: liveData.issue_type.toUpperCase(),
+        confidence: liveData.detections?.[0]?.confidence ?? (liveData.detected ? 0.95 : 0.0),
+        label: `${((liveData.detections?.[0]?.confidence ?? 0.95) * 100).toFixed(1)}% AI Confidence`,
+        category: (selectedCategory as any) || 'pothole',
+        message: liveData.description || `Detected ${liveData.count} defect(s)`,
+        rawApiData: liveData,
+      };
+
+      onPhotoCaptured(displayPhotoUrl, legacyResult, liveData);
+    } catch (err: any) {
+      console.error('Error fetching live backend API:', err);
+      const errorMsg = err.message || 'Failed to connect to detection backend service.';
+      setApiError(errorMsg);
+
+      // Fall back to client heuristic
+      try {
+        const fallbackResult = await detectCivicIssue(displayPhotoUrl, targetCategory);
+        onPhotoCaptured(displayPhotoUrl, fallbackResult);
+      } catch {
+        // Ignore fallback error
+      }
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const retakePhoto = () => {
     setCapturedPhoto(null);
-    setDetectionResult(null);
+    setApiResult(null);
+    setApiError(null);
+    setLastImageInput(null);
     startCamera();
+  };
+
+  const handleRetryApi = () => {
+    if (lastImageInput && capturedPhoto) {
+      processPhotoInput(lastImageInput, capturedPhoto);
+    }
   };
 
   return (
@@ -215,7 +267,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
             <div className="absolute inset-8 border-2 border-dashed border-emerald-400/60 rounded-xl pointer-events-none flex items-center justify-center">
               <div className="w-12 h-12 border-2 border-emerald-400 rounded-full animate-pulse" />
             </div>
-            
+
             {/* Live Indicator */}
             <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-2 border border-slate-700">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -244,45 +296,17 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               className="w-full h-full object-cover"
             />
 
-            {/* AI Scanning Line Animation */}
-            {isAnalyzing && (
-              <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-xs flex flex-col items-center justify-center">
-                <div className="animate-scan-line" />
-                <div className="bg-slate-900/90 border border-emerald-500/50 px-5 py-3 rounded-2xl text-center space-y-1 shadow-2xl">
-                  <div className="flex items-center justify-center space-x-2 text-emerald-400 font-bold text-xs">
-                    <Sparkles className="w-4 h-4 animate-spin" />
-                    <span>YOLOv8 Inference Running...</span>
-                  </div>
-                  <p className="text-[11px] text-slate-300">Extracting defect spatial contours & confidence</p>
-                </div>
-              </div>
-            )}
-
-            {/* AI Result Overlay Badge */}
-            {detectionResult && !isAnalyzing && (
-              <div className="absolute bottom-3 left-3 right-3 bg-slate-900/90 backdrop-blur-md border border-emerald-500/50 p-3 rounded-xl shadow-lg flex items-center justify-between">
-                <div className="flex items-center space-x-2.5">
-                  <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-white">{detectionResult.detected_class}</span>
-                      <span className="text-[10px] font-mono font-bold bg-emerald-500 text-slate-950 px-1.5 py-0.2 rounded">
-                        {(detectionResult.confidence * 100).toFixed(1)}% AI CONFIDENCE
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300">CV validation passed</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={retakePhoto}
-                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-600 transition-colors flex items-center space-x-1"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Retake</span>
-                </button>
-              </div>
-            )}
+            {/* Retake Button overlay */}
+            <div className="absolute top-3 right-3">
+              <button
+                type="button"
+                onClick={retakePhoto}
+                className="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 backdrop-blur text-white text-xs font-medium rounded-lg border border-slate-700 shadow transition-colors flex items-center space-x-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retake Photo</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -295,7 +319,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
             <div>
               <p className="text-sm font-semibold text-slate-200">Capture Live Photo Evidence</p>
               <p className="text-xs text-slate-400 mt-1">
-                YOLOv8 Computer Vision model validates genuine civic defects automatically.
+                Connected directly to live detection backend (<code className="text-emerald-400">civicpulse-ai-95na.onrender.com</code>)
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -323,6 +347,16 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         )}
       </div>
 
+      {/* Live Detection API Results Display */}
+      {(isAnalyzing || apiResult || apiError) && (
+        <DetectionResults
+          isLoading={isAnalyzing}
+          error={apiError}
+          result={apiResult}
+          onRetry={handleRetryApi}
+        />
+      )}
+
       {/* Hidden processing canvas */}
       <canvas ref={canvasRef} className="hidden" />
 
@@ -343,7 +377,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
       {/* Quick Sample Presets */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
         <span className="text-xs font-bold text-slate-700 block">
-          ⚡ Instant Photo Shortcuts (Click to Test AI Detection):
+          ⚡ Instant Photo Shortcuts (Click to Test Live AI Detection):
         </span>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {samplePresets.map((preset, idx) => (
@@ -364,7 +398,9 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
           <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-semibold">{cameraError}</p>
-            <p className="text-[11px] text-amber-800">You can also use the <strong>Upload Photo</strong> button or any sample preset above to test instant detection.</p>
+            <p className="text-[11px] text-amber-800">
+              You can also use the <strong>Upload Photo</strong> button or any sample preset above to test instant detection.
+            </p>
           </div>
         </div>
       )}
