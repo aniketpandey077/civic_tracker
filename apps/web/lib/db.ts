@@ -315,13 +315,22 @@ export async function adminUpdateIssueDetails(
 /** Admin: Purge / Delete a bogus or invalid docket with full cascade */
 export async function adminDeleteIssue(issueId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // 1. Delete associated evidence, history, and verifications
+    // Try RPC function first (bypasses any foreign key/RLS issues via Security Definer)
+    const { data: rpcSuccess, error: rpcError } = await supabase.rpc('delete_civic_issue_cascade', {
+      target_id: issueId,
+    });
+
+    if (!rpcError && rpcSuccess) {
+      return { success: true };
+    }
+
+    // Fallback direct cascade queries
     await supabase.from('resolution_evidence').delete().eq('issue_id', issueId);
     await supabase.from('issue_status_history').delete().eq('issue_id', issueId);
+    await supabase.from('resolution_verifications').delete().eq('issue_id', issueId);
     await supabase.from('upvotes').delete().eq('issue_id', issueId);
     await supabase.from('notifications').delete().eq('complaint_number', issueId);
 
-    // 2. Delete the issue itself by ID or complaint_number
     const { error } = await supabase
       .from('civic_issues')
       .delete()
