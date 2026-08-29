@@ -38,7 +38,7 @@ import {
 } from '@/lib/db';
 import { CivicIssue, IssueStatus, DashboardMetrics, AdminZone } from '@/lib/types';
 import { ADMIN_ZONES } from '@/lib/zoneMatcher';
-import { getStoredIssues, saveStoredIssues, updateIssueStatus as storeUpdateStatus } from '@/lib/store';
+import { getStoredIssues, saveStoredIssues, deleteIssue, updateIssueStatus as storeUpdateStatus } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
 import EvidenceModal from '@/components/EvidenceModal';
 
@@ -123,8 +123,8 @@ export default function AdminDashboardPage() {
     storeUpdateStatus(
       statusModalIssue.id,
       newStatus,
-      'Municipal Administrator',
-      statusNote || `Administrative override to ${newStatus}`
+      statusNote || `Administrative override to ${newStatus}`,
+      'Municipal Administrator'
     );
 
     showSuccessBanner(`Docket ${statusModalIssue.complaint_number} updated to ${newStatus.toUpperCase()}`);
@@ -145,8 +145,17 @@ export default function AdminDashboardPage() {
   const handleDeleteDocket = async (issueId: string, complaintNumber: string) => {
     if (!confirm(`Are you sure you want to PURGE ticket ${complaintNumber}? This action is irreversible.`)) return;
 
+    // 1. Delete from Supabase with full cascade
     await adminDeleteIssue(issueId);
-    showSuccessBanner(`Ticket ${complaintNumber} has been deleted.`);
+
+    // 2. Delete from local storage & broadcast update to all open pages
+    deleteIssue(issueId);
+    deleteIssue(complaintNumber);
+
+    // 3. Immediately filter local state
+    setIssues((prev) => prev.filter((i) => i.id !== issueId && i.complaint_number !== complaintNumber));
+
+    showSuccessBanner(`Ticket ${complaintNumber} has been permanently deleted.`);
     loadData();
   };
 

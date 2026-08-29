@@ -312,17 +312,30 @@ export async function adminUpdateIssueDetails(
   return { success: true };
 }
 
-/** Admin: Purge / Delete a bogus or invalid docket */
+/** Admin: Purge / Delete a bogus or invalid docket with full cascade */
 export async function adminDeleteIssue(issueId: string): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
-    .from('civic_issues')
-    .delete()
-    .eq('id', issueId);
+  try {
+    // 1. Delete associated evidence, history, and verifications
+    await supabase.from('resolution_evidence').delete().eq('issue_id', issueId);
+    await supabase.from('issue_status_history').delete().eq('issue_id', issueId);
+    await supabase.from('upvotes').delete().eq('issue_id', issueId);
+    await supabase.from('notifications').delete().eq('complaint_number', issueId);
 
-  if (error) {
-    return { success: false, error: error.message };
+    // 2. Delete the issue itself by ID or complaint_number
+    const { error } = await supabase
+      .from('civic_issues')
+      .delete()
+      .or(`id.eq.${issueId},complaint_number.eq.${issueId}`);
+
+    if (error) {
+      console.warn('[db] adminDeleteIssue error:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error('[db] adminDeleteIssue exception:', err?.message);
+    return { success: false, error: err?.message };
   }
-  return { success: true };
 }
 
 /** Admin: Upload official contractor resolution proof */

@@ -11,23 +11,23 @@ export interface DepartmentEmailPayload {
 }
 
 /**
- * Maps department names to official municipal escalation email addresses.
+ * Maps department names to verified official municipal escalation email addresses.
  */
 export function getDepartmentEmail(departmentName: string): string {
   const deptLower = (departmentName || '').toLowerCase();
-  if (deptLower.includes('road') || deptLower.includes('pwd') || deptLower.includes('public works')) {
-    return 'pwd.head.escalations@jaipurmc.org';
+  if (deptLower.includes('road') || deptLower.includes('pwd') || deptLower.includes('public works') || deptLower.includes('bridge')) {
+    return 'pwd.nodal@punjab.gov.in';
   }
   if (deptLower.includes('waste') || deptLower.includes('garbage') || deptLower.includes('sanitation') || deptLower.includes('swm')) {
-    return 'sanitation.chief@jaipurmc.org';
+    return 'swm.punjab@punjab.gov.in';
   }
-  if (deptLower.includes('water') || deptLower.includes('phed') || deptLower.includes('drain')) {
-    return 'phed.water.director@rajasthan.gov.in';
+  if (deptLower.includes('water') || deptLower.includes('phed') || deptLower.includes('drain') || deptLower.includes('sewer')) {
+    return 'md.pwssb@punjab.gov.in';
   }
-  if (deptLower.includes('light') || deptLower.includes('jvvnl') || deptLower.includes('electric')) {
-    return 'jvvnl.streetlights@rajasthan.gov.in';
+  if (deptLower.includes('light') || deptLower.includes('pspcl') || deptLower.includes('electric') || deptLower.includes('power')) {
+    return 'customercare@pspcl.in';
   }
-  return 'municipal.commissioner.escalations@jaipurmc.org';
+  return 'director.localgovt@punjab.gov.in';
 }
 
 /**

@@ -24,7 +24,7 @@ export default function MapView({
 
   const [issues, setIssues] = useState<CivicIssue[]>(initialIssues);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('active');
   const [selectedIssue, setSelectedIssue] = useState<CivicIssue | null>(null);
   const [isLocatingUser, setIsLocatingUser] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -35,7 +35,8 @@ export default function MapView({
 
   const filteredIssues = issues.filter((issue) => {
     if (selectedCategory !== 'all' && issue.category !== selectedCategory) return false;
-    if (selectedStatus !== 'all') {
+    if (selectedStatus === 'active' && issue.status === 'resolved') return false;
+    if (selectedStatus !== 'all' && selectedStatus !== 'active') {
       if (selectedStatus === 'overdue') {
         const isOverdue = issue.status !== 'resolved' && new Date(issue.deadline_at).getTime() < Date.now();
         if (!isOverdue) return false;

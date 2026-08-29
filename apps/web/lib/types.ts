@@ -16,6 +16,7 @@ export interface AdminZone {
   city: string;
   city_code: string;
   official_handle: string;
+  official_email?: string;
   boundary?: number[][][]; // GeoJSON Polygon coordinates [lng, lat]
   center: [number, number]; // [lat, lng]
 }
@@ -140,6 +141,7 @@ export interface ZoneBudgetData {
   fiscal_year: string;
   allocated_amount: number | null;
   scheme_name: string | null;
+  source_title?: string | null;
   source_url: string | null;
 }
 
