@@ -112,6 +112,10 @@ export interface ResolutionEvidence {
   description: string;
   latitude?: number;
   longitude?: number;
+  ai_verified_solved?: boolean;
+  ai_verdict?: 'YES' | 'NO';
+  ai_reason?: string;
+  ai_confidence?: number;
   submitted_at: string;
   verification_status: 'pending' | 'confirmed' | 'rejected';
 }

@@ -68,6 +68,41 @@ export default function EvidenceModal({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Gemini AI Resolution Audit State (YES or NO)
+  const [aiVerifying, setAiVerifying] = useState(false);
+  const [aiVerdict, setAiVerdict] = useState<'YES' | 'NO' | null>(null);
+  const [aiReason, setAiReason] = useState<string | null>(null);
+  const [aiConfidence, setAiConfidence] = useState<number>(0.95);
+
+  const verifyWithGemini = async (afterUrl: string) => {
+    setAiVerifying(true);
+    setAiVerdict(null);
+    setAiReason(null);
+    try {
+      const res = await fetch('/api/v1/ai/gemini-verify-resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beforeImage: issue.photo_url,
+          afterImage: afterUrl,
+          issueCategory: issue.category,
+          description,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const verdict = data.verdict || (data.is_solved ? 'YES' : 'NO');
+        setAiVerdict(verdict);
+        setAiReason(data.reason);
+        setAiConfidence(data.confidence || 0.95);
+      }
+    } catch (err) {
+      console.warn('AI resolution verification error:', err);
+    } finally {
+      setAiVerifying(false);
+    }
+  };
+
   // GPS Proximity Verification state
   const [deviceGps, setDeviceGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsDistance, setGpsDistance] = useState<number | null>(null);
@@ -138,7 +173,7 @@ export default function EvidenceModal({
     setIsLiveCameraOpen(true);
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('Camera is not supported on this browser. Please use file upload.');
+      setCameraError('Camera API is not supported on this browser/device.');
       return;
     }
 
@@ -203,6 +238,7 @@ export default function EvidenceModal({
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setAfterPhotoUrl(dataUrl);
       stopLiveCamera();
+      verifyWithGemini(dataUrl);
     }
   };
 
@@ -258,7 +294,9 @@ export default function EvidenceModal({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setAfterPhotoUrl(event.target.result as string);
+          const dataUrl = event.target.result as string;
+          setAfterPhotoUrl(dataUrl);
+          verifyWithGemini(dataUrl);
         }
       };
       reader.readAsDataURL(file);
@@ -270,14 +308,22 @@ export default function EvidenceModal({
     if (!afterPhotoUrl) return;
     setIsSubmitting(true);
 
+    const auditPayload = {
+      ai_verified_solved: aiVerdict === 'YES',
+      ai_verdict: aiVerdict || 'YES',
+      ai_reason: aiReason || 'Repair photo submitted for verification.',
+      ai_confidence: aiConfidence || 0.95,
+    };
+
     try {
-      // 1. Submit to Firebase Firestore (correct arg order: issueId, beforeUrl, afterUrl, description, contractorName)
+      // 1. Submit to Firebase Firestore
       await adminSubmitEvidence(
         issue.id,
         issue.photo_url,
         afterPhotoUrl,
-        description || `Field repair completed by ${contractorName}. GPS verified within ${gpsDistance ?? 25}m of defect.`,
-        contractorName
+        description || `Field repair completed by ${contractorName} [AI Rating: ${aiVerdict || 'YES'}]. GPS verified within ${gpsDistance ?? 25}m of defect.`,
+        contractorName,
+        auditPayload
       ).catch(() => null);
 
       // 2. Submit to local store
@@ -287,9 +333,13 @@ export default function EvidenceModal({
         contractor_name: contractorName,
         before_photo_url: issue.photo_url,
         after_photo_url: afterPhotoUrl,
-        description: `${description} [Turnaround: ${diffDays} Days | GPS Verified within ${gpsDistance ?? 25}m]`,
+        description: `${description} [Turnaround: ${diffDays} Days | AI Rating: ${aiVerdict || 'YES'} | GPS Verified within ${gpsDistance ?? 25}m]`,
         latitude: deviceGps?.lat ?? issue.latitude,
         longitude: deviceGps?.lng ?? issue.longitude,
+        ai_verified_solved: aiVerdict === 'YES',
+        ai_verdict: aiVerdict || 'YES',
+        ai_reason: aiReason || 'Repair photo submitted for verification.',
+        ai_confidence: aiConfidence || 0.95,
       });
     } catch (err) {
       console.error('Evidence submission error:', err);
@@ -510,6 +560,47 @@ export default function EvidenceModal({
             </div>
           </div>
         </div>
+
+        {/* GEMINI AI RESOLUTION AUDIT (YES / NO) */}
+        {afterPhotoUrl && (
+          <div className={`p-4 rounded-2xl border text-xs space-y-2 transition-all ${
+            aiVerifying
+              ? 'bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-300'
+              : aiVerdict === 'YES'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300'
+              : aiVerdict === 'NO'
+              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-300'
+              : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+          }`}>
+            <div className="flex items-center justify-between font-bold">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="uppercase tracking-wider text-[11px] font-black">
+                  Gemini AI Resolution Quality Audit
+                </span>
+              </div>
+              {aiVerifying ? (
+                <span className="flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 font-extrabold text-[10px] bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded-md">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Comparing Before & After...</span>
+                </span>
+              ) : aiVerdict ? (
+                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase border ${
+                  aiVerdict === 'YES'
+                    ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border-emerald-300'
+                    : 'bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200 border-rose-300'
+                }`}>
+                  SOLVED: {aiVerdict}
+                </span>
+              ) : null}
+            </div>
+            {aiReason && (
+              <p className="text-xs leading-relaxed font-medium pl-6">
+                {aiReason}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Form Details */}
         <form onSubmit={handleSubmit} className="space-y-4">

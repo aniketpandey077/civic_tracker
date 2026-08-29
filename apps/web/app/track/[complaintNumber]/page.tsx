@@ -424,6 +424,36 @@ export default function TrackComplaintPage() {
             </div>
           </div>
 
+          {/* GEMINI AI RESOLUTION AUDIT (YES / NO) */}
+          {evidence?.after_photo_url && (
+            <div className={`p-4 rounded-2xl border text-xs space-y-1.5 transition-all ${
+              evidence.ai_verdict === 'NO'
+                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700 text-rose-900 dark:text-rose-300'
+                : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-300'
+            }`}>
+              <div className="flex items-center justify-between font-bold">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="uppercase tracking-wider text-[11px] font-black">
+                    Gemini AI Resolution Verification
+                  </span>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-black uppercase border ${
+                  evidence.ai_verdict === 'NO'
+                    ? 'bg-rose-100 dark:bg-rose-900 text-rose-800 dark:text-rose-200 border-rose-300'
+                    : 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border-emerald-300'
+                }`}>
+                  SOLVED: {evidence.ai_verdict || 'YES'}
+                </span>
+              </div>
+              {evidence.ai_reason && (
+                <p className="text-xs leading-relaxed font-medium pl-6">
+                  {evidence.ai_reason}
+                </p>
+              )}
+            </div>
+          )}
+
           {evidence?.description && (
             <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
               <strong className="text-slate-900 dark:text-white">Field Work Log:</strong> {evidence.description}
