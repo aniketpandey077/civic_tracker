@@ -21,7 +21,8 @@ import {
   Sparkles,
   LogIn,
   Lock,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue, saveStoredIssues, getUserFiledComplaints, getUserUpvotedIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
@@ -158,8 +159,18 @@ export default function MyComplaintsPage() {
     }
   };
 
+  const handleClearLocalCache = () => {
+    if (confirm('Clear local browser test cache? This removes temporary test cards and re-syncs fresh from Firebase.')) {
+      localStorage.removeItem('civictrack_issues');
+      localStorage.removeItem('civic_user_filed_complaints');
+      localStorage.removeItem('civictrack_status_history');
+      localStorage.removeItem('civictrack_evidence');
+      window.location.reload();
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -176,13 +187,25 @@ export default function MyComplaintsPage() {
           </p>
         </div>
 
-        <Link
-          href="/report"
-          className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#B91C1C] hover:bg-[#991B1B] text-white font-extrabold text-xs shadow-md transition-all active:scale-95"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>File New Grievance</span>
-        </Link>
+        <div className="flex items-center space-x-2.5">
+          <button
+            type="button"
+            onClick={handleClearLocalCache}
+            title="Clean out test records stored in browser cache"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-red-50 dark:bg-slate-800 dark:hover:bg-red-950/40 text-slate-600 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Old Test Cards</span>
+          </button>
+
+          <Link
+            href="/report"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-[#B91C1C] hover:bg-[#991B1B] text-white font-extrabold text-xs shadow-md transition-all active:scale-95"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>File New Grievance</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filters & Search */}
