@@ -13,7 +13,7 @@ import {
   Clock,
   ArrowUpRight
 } from 'lucide-react';
-import { getAccountabilityLeaderboard, getPerformanceLeaderboard, getDashboardMetrics } from '@/lib/store';
+import { fetchAccountabilityLeaderboard, fetchPerformanceLeaderboard, fetchDashboardMetrics } from '@/lib/db';
 import { ZoneLeaderboardAccountability, ZoneLeaderboardPerformance, DashboardMetrics, ZoneBudgetData } from '@/lib/types';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import BudgetCard from '@/components/BudgetCard';
@@ -27,10 +27,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setMounted(true);
-    setAccountabilityData(getAccountabilityLeaderboard());
-    setPerformanceData(getPerformanceLeaderboard());
-    setMetrics(getDashboardMetrics());
+    // Fetch real data from Supabase
+    fetchAccountabilityLeaderboard().then(setAccountabilityData);
+    fetchPerformanceLeaderboard().then(setPerformanceData);
+    fetchDashboardMetrics().then(setMetrics);
   }, []);
+
 
   const formatRate = (rate: number) => {
     // If decimal e.g. 0.964 -> 96.4%, if already 96.4 -> 96.4%

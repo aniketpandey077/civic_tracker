@@ -8,6 +8,8 @@ import { DetectionResult, AnalyzeApiResponse, analyzeImageWithLiveApi } from '..
 import { matchZoneByCoordinates, reverseGeocodeReal, RealGeoAddress } from '../lib/zoneMatcher';
 import { generateComplaintNumber } from '../lib/complaintNumber';
 import { addIssue, getStoredIssues, attachEvidenceAndUpvote, updateIssueAiResults } from '../lib/store';
+import { createIssue } from '../lib/db';
+
 import { IssueCategory, CivicIssue } from '../lib/types';
 import { findNearbyExistingIssue, NearbyIssueMatch } from '../lib/geoDistance';
 
@@ -248,7 +250,12 @@ export default function ReportForm() {
         has_upvoted: true,
       };
 
-      addIssue(newIssue);
+      // Try Supabase first; fall back to localStorage if DB not yet set up
+      const savedIssue = await createIssue(newIssue).catch(() => null);
+      if (!savedIssue) {
+        // Fallback: persist to localStorage so demo still works
+        addIssue(newIssue);
+      }
 
       // Launch background AI analysis if not finished yet
       if (!liveApiData && photoUrl) {
