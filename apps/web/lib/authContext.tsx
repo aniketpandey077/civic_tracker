@@ -9,8 +9,8 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut
 } from 'firebase/auth';
-import { auth, googleProvider } from './firebase';
-import { supabase } from './supabase';
+import { auth, db, googleProvider } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export type UserRole = 'citizen' | 'department_staff' | 'admin' | 'superadmin' | 'super_admin';
 
@@ -21,6 +21,15 @@ export interface AppUser {
   photoURL: string | null;
   role: UserRole;
 }
+
+const DEFAULT_SUPERADMINS = [
+  'aniketpandey7599@gmail.com',
+  'superadmin@civicpulse.org',
+  'ayushsingh6394871986@gmail.com',
+  'aniketpandey077@gmail.com',
+  'admin@jaipurmc.org',
+  'admin@civicpulse.org'
+];
 
 interface AuthContextType {
   user: AppUser | null;
@@ -40,34 +49,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/** Helper to fetch the official role from Supabase users table */
-async function fetchUserRoleFromSupabase(email: string, name: string): Promise<UserRole> {
+/** Helper to fetch the official role from Firestore users collection */
+async function fetchUserRoleFromFirestore(email: string, name: string): Promise<UserRole> {
   if (!email) return 'citizen';
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .ilike('email', email)
-      .maybeSingle();
+  const cleanEmail = email.toLowerCase().trim();
+  const isDefaultAdmin = DEFAULT_SUPERADMINS.includes(cleanEmail);
 
-    if (data && data.role) {
-      return (data.role as UserRole) || 'citizen';
+  try {
+    const userDocRef = doc(db, 'users', cleanEmail);
+    const snap = await getDoc(userDocRef);
+
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data && data.role) {
+        return (data.role as UserRole) || (isDefaultAdmin ? 'superadmin' : 'citizen');
+      }
     }
 
-    // If not in Supabase users table, create row as citizen
-    await supabase.from('users').upsert(
+    // Default role assignment
+    const assignedRole: UserRole = isDefaultAdmin ? 'superadmin' : 'citizen';
+    await setDoc(
+      userDocRef,
       {
-        name: name || email.split('@')[0] || 'Citizen',
-        email: email.toLowerCase(),
-        role: 'citizen',
+        name: name || cleanEmail.split('@')[0] || 'Citizen',
+        email: cleanEmail,
+        role: assignedRole,
+        updated_at: new Date().toISOString(),
       },
-      { onConflict: 'email' }
+      { merge: true }
     );
 
-    return 'citizen';
+    return assignedRole;
   } catch (err) {
-    console.warn('[authContext] Supabase role check error:', err);
-    return 'citizen';
+    console.warn('[authContext] Firestore role check note:', err);
+    return isDefaultAdmin ? 'superadmin' : 'citizen';
   }
 }
 
@@ -92,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser && fbUser.email) {
         const name = fbUser.displayName || fbUser.email.split('@')[0] || 'Citizen';
-        const role = await fetchUserRoleFromSupabase(fbUser.email, name);
+        const role = await fetchUserRoleFromFirestore(fbUser.email, name);
 
         const appUser: AppUser = {
           id: fbUser.uid,
@@ -117,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshRole = useCallback(async (): Promise<UserRole> => {
     if (!user?.email) return 'citizen';
-    const updatedRole = await fetchUserRoleFromSupabase(user.email, user.displayName || '');
+    const updatedRole = await fetchUserRoleFromFirestore(user.email, user.displayName || '');
     setUser(prev => prev ? { ...prev, role: updatedRole } : null);
     return updatedRole;
   }, [user]);
@@ -128,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
       const name = fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen';
-      const role = await fetchUserRoleFromSupabase(fbUser.email || '', name);
+      const role = await fetchUserRoleFromFirestore(fbUser.email || '', name);
 
       const appUser: AppUser = {
         id: fbUser.uid,
@@ -157,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const fbUser = result.user;
       const name = fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen';
-      const role = await fetchUserRoleFromSupabase(fbUser.email || email, name);
+      const role = await fetchUserRoleFromFirestore(fbUser.email || email, name);
 
       const appUser: AppUser = {
         id: fbUser.uid,
@@ -185,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const fbUser = result.user;
       const name = email.split('@')[0] || 'Citizen';
-      const role = await fetchUserRoleFromSupabase(email, name);
+      const role = await fetchUserRoleFromFirestore(email, name);
 
       const appUser: AppUser = {
         id: fbUser.uid,
@@ -211,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInAsDemo = useCallback(async (customRole: UserRole = 'citizen') => {
     const demoEmail = 'citizen.punjab@gov.in';
     const demoName = 'Gurpreet Singh (Verified Citizen)';
-    const role = await fetchUserRoleFromSupabase(demoEmail, demoName);
+    const role = await fetchUserRoleFromFirestore(demoEmail, demoName);
 
     const appUser: AppUser = {
       id: 'demo-citizen-uid-202',
