@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, RefreshCw, AlertCircle, Upload, SwitchCamera } from 'lucide-react';
+import { Camera, RefreshCw, AlertCircle, Upload, SwitchCamera, CameraOff } from 'lucide-react';
 import {
   analyzeImageWithLiveApi,
   AnalyzeApiResponse,
@@ -274,15 +274,26 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               <span>CAMERA ACTIVE</span>
             </div>
 
-            {/* Flip Camera Button */}
-            <button
-              type="button"
-              onClick={toggleCameraFacing}
-              className="absolute top-3 right-3 bg-slate-900/80 hover:bg-slate-800 backdrop-blur p-2 rounded-full text-white border border-slate-700 shadow-md transition-colors"
-              title="Switch Camera"
-            >
-              <SwitchCamera className="w-4 h-4" />
-            </button>
+            {/* Camera Control Action Bar */}
+            <div className="absolute top-3 right-3 flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="bg-rose-600/90 hover:bg-rose-600 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-bold border border-rose-400 shadow-md transition-colors flex items-center space-x-1.5"
+                title="Turn Off Camera"
+              >
+                <CameraOff className="w-3.5 h-3.5" />
+                <span>Turn Off Camera</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleCameraFacing}
+                className="bg-slate-900/80 hover:bg-slate-800 backdrop-blur p-2 rounded-full text-white border border-slate-700 shadow-md transition-colors"
+                title="Switch Camera"
+              >
+                <SwitchCamera className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 

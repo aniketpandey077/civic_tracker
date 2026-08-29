@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle, XCircle, ShieldCheck, UserCheck, HardHat } from 'lucide-react';
 import { CivicIssue } from '../lib/types';
-import { verifyResolution } from '../lib/store';
+import { verifyResolution, getStoredEvidence } from '../lib/store';
 
 interface CitizenVerifyModalProps {
   issue: CivicIssue;
@@ -22,6 +22,10 @@ export default function CitizenVerifyModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
+
+  const evidence = getStoredEvidence().find((e) => e.issue_id === issue.id);
+  const contractorName =
+    evidence?.contractor_name || evidence?.submitted_by || 'Assigned Field Contractor';
 
   const handleDecision = (decision: 'confirmed' | 'rejected') => {
     setIsSubmitting(true);
@@ -42,14 +46,36 @@ export default function CitizenVerifyModal({
         </button>
 
         <div>
-          <h3 className="text-base font-bold text-slate-900">Citizen Verification Prompt</h3>
+          <h3 className="text-base font-bold text-slate-900">Citizen Verification Guardrail</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Has this civic defect been genuinely resolved on-site?
+            Only citizens can confirm whether this defect was physically repaired on-site.
           </p>
         </div>
 
-        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-          <div className="flex items-center justify-between text-xs">
+        {/* Contractor Credit & Evidence Summary */}
+        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+          <div className="flex items-center space-x-2 text-xs text-slate-800 font-bold border-b border-slate-200 pb-2">
+            <HardHat className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Repair Contractor: <span className="text-emerald-800">{contractorName}</span></span>
+          </div>
+
+          {evidence?.after_photo_url && (
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                Uploaded Resolution Photo
+              </span>
+              <div className="aspect-video rounded-lg overflow-hidden border border-slate-300">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={evidence.after_photo_url}
+                  alt="Contractor Resolution Evidence"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-xs pt-1">
             <span className="text-slate-500">Ticket Number:</span>
             <span className="font-mono font-bold text-slate-800">{issue.complaint_number}</span>
           </div>
@@ -61,13 +87,13 @@ export default function CitizenVerifyModal({
 
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Verification Feedback / Note (Optional)
+            Citizen Inspection Notes (Optional)
           </label>
           <textarea
             rows={2}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="e.g. Visited the site today, the road has been smoothly patched."
+            placeholder="e.g. Inspected site today, asphalt was smoothly patched by contractor."
             className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>

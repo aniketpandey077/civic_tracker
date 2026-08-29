@@ -356,12 +356,14 @@ export function submitResolutionEvidence(evidence: Omit<ResolutionEvidence, 'id'
   };
   saveStoredEvidence([...allEvidence, newEv]);
 
-  // Auto transition issue to resolved or in_progress pending citizen verification
+  const contractorLabel = evidence.contractor_name ? `Contractor: ${evidence.contractor_name}` : (evidence.submitted_by || 'Department Contractor');
+
+  // Transition issue to in_progress / awaiting citizen verification (Does NOT close until citizen votes Yes)
   updateIssueStatus(
     evidence.issue_id,
-    'resolved',
-    `Department uploaded Resolution Evidence: "${evidence.description}". Awaiting citizen verification.`,
-    evidence.submitted_by || 'Department Field Engineer'
+    'in_progress',
+    `Repair Evidence Photo uploaded by ${contractorLabel}: "${evidence.description}". Awaiting citizen verification (Yes/No vote) to close.`,
+    contractorLabel
   );
 
   return newEv;
@@ -372,21 +374,18 @@ export function verifyResolution(issueId: string, decision: 'confirmed' | 'rejec
   const index = issues.findIndex(i => i.id === issueId);
   if (index === -1) return false;
 
-  const current = issues[index];
-
   if (decision === 'confirmed') {
     updateIssueStatus(
       issueId,
       'resolved',
-      `Citizen confirmed resolution: "${comment || 'Verified fixed on-site.'}"`,
+      `Citizen Verification CONFIRMED (${comment || 'Verified physically fixed on-site'}). Ticket officially closed.`,
       'Citizen Verifier'
     );
   } else {
-    // Reopen ticket!
     updateIssueStatus(
       issueId,
       'reopened',
-      `Citizen rejected resolution: "${comment || 'Defect is still present on-site.'}". Ticket reopened and escalated.`,
+      `Citizen Verification REJECTED (${comment || 'Defect remains on-site'}). Ticket reopened for contractor rework.`,
       'Citizen Verifier'
     );
   }

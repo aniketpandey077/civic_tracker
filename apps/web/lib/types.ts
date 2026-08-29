@@ -98,6 +98,7 @@ export interface ResolutionEvidence {
   id: string;
   issue_id: string;
   submitted_by?: string;
+  contractor_name?: string;
   before_photo_url: string;
   after_photo_url: string;
   description: string;

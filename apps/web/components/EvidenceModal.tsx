@@ -20,6 +20,9 @@ export default function EvidenceModal({
   onClose,
   onSubmitted,
 }: EvidenceModalProps) {
+  const [contractorName, setContractorName] = useState(
+    existingEvidence?.contractor_name || 'Sharma Infra Contractors (Ayush Sharma)'
+  );
   const [afterPhotoUrl, setAfterPhotoUrl] = useState(
     existingEvidence?.after_photo_url ||
       'https://images.unsplash.com/photo-1590402494682-cd3fb53b1f70?auto=format&fit=crop&w=800&q=80'
@@ -37,7 +40,8 @@ export default function EvidenceModal({
 
     submitResolutionEvidence({
       issue_id: issue.id,
-      submitted_by: 'Jaipur Field Maintenance Crew',
+      submitted_by: contractorName,
+      contractor_name: contractorName,
       before_photo_url: issue.photo_url,
       after_photo_url: afterPhotoUrl,
       description,
@@ -107,7 +111,21 @@ export default function EvidenceModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Resolution Photo URL
+              Contractor / Repair Lead Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={contractorName}
+              onChange={(e) => setContractorName(e.target.value)}
+              placeholder="e.g. Sharma Paving Contractors (Lead: Ayush Sharma)"
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Resolution Photo URL <span className="text-rose-500">*</span>
             </label>
             <input
               type="url"
