@@ -60,6 +60,7 @@ export interface CivicIssue {
   complaint_number: string; // e.g. CTR-2026-JPR-000184
   reporter_id?: string;
   reporter_name?: string;
+  reporter_email?: string;
   zone_id: string;
   zone_name: string;
   department: string;

@@ -240,11 +240,16 @@ export default function ReportForm() {
 
       const photoFinal = photoUrl || '';
 
+      const userReporterId = user?.id || (user as any)?.uid || undefined;
+      const userReporterEmail = user?.email || undefined;
+      const userReporterName = user?.displayName || user?.email?.split('@')[0] || 'Verified Citizen';
+
       const newIssue: CivicIssue = {
         id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `issue-${Date.now()}`,
         complaint_number: complaintNumber,
-        reporter_id: user?.id ?? undefined,
-        reporter_name: user?.displayName || user?.email?.split('@')[0] || 'Verified Citizen',
+        reporter_id: userReporterId,
+        reporter_name: userReporterName,
+        reporter_email: userReporterEmail,
         zone_id: '',
         zone_name: zoneName,
         department: deptName,

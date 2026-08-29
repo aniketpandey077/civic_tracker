@@ -115,20 +115,27 @@ export default function MyComplaintsPage() {
     );
   }
 
-  // Filter issues registered by the current logged-in user
-  // Uses 3 reliable signals in priority order:
-  // 1. civic_user_filed_complaints localStorage key (set when user submits a report on this device)
-  // 2. reporter_id matches current user id
-  // 3. reporter_name includes user name/email (fallback for old records)
-  // 4. has_upvoted (decorated from local upvoted IDs)
+  // Filter issues registered ONLY by the current logged-in user
   const filedNumbers = new Set(getUserFiledComplaints());
+  const userUid = user.id || (user as any)?.uid || '';
+  const userEmail = (user.email || '').toLowerCase();
+  const userName = (user.displayName || '').toLowerCase();
+
   const myIssues = rawIssues.filter((issue) => {
+    // 1. Complaint number filed in this local browser session
     if (filedNumbers.has(issue.complaint_number)) return true;
-    if (user.id && issue.reporter_id === user.id) return true;
-    const reporter = (issue.reporter_name || '').toLowerCase();
-    if (user.email && reporter.includes(user.email.toLowerCase())) return true;
-    if (user.displayName && reporter.includes(user.displayName.toLowerCase())) return true;
-    if (issue.has_upvoted) return true;
+
+    // 2. Reporter ID matches current logged-in user UID
+    if (userUid && issue.reporter_id === userUid) return true;
+
+    // 3. Reporter Email matches current user's email
+    if (userEmail && issue.reporter_email && issue.reporter_email.toLowerCase() === userEmail) return true;
+
+    // 4. Fallback: reporter_name exactly matches user email or displayName
+    const repName = (issue.reporter_name || '').toLowerCase();
+    if (userEmail && repName === userEmail) return true;
+    if (userName && repName === userName) return true;
+
     return false;
   });
 
