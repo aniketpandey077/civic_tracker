@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,18 +11,18 @@ import { addIssue, getStoredIssues, attachEvidenceAndUpvote, updateIssueAiResult
 import { IssueCategory, CivicIssue } from '../lib/types';
 import { findNearbyExistingIssue, NearbyIssueMatch } from '../lib/geoDistance';
 
-const CATEGORIES: { id: IssueCategory; label: string; icon: string; defaultDesc: string }[] = [
-  { id: 'pothole', label: 'Pothole & Cavity', icon: '🕳️', defaultDesc: 'Hazardous asphalt pothole causing traffic slowdown and safety risk.' },
-  { id: 'fallen_tree', label: 'Fallen Tree / Branch', icon: '🌳', defaultDesc: 'Uprooted tree or heavy branches blocking vehicle traffic and road lane.' },
-  { id: 'exposed_wires', label: 'Dangling Electric Wire', icon: '⚡', defaultDesc: 'Low-hanging or snapped 440V live power wire creating severe shock & fire risk.' },
-  { id: 'garbage', label: 'Garbage Dump Overflow', icon: '🗑️', defaultDesc: 'Overflowing municipal garbage bin blocking pedestrian pathway.' },
-  { id: 'water_logging', label: 'Stagnant Water / Flood', icon: '🦟', defaultDesc: 'Dark stagnant rainwater pool due to blocked drainage, breeding mosquitoes.' },
-  { id: 'broken_footpath', label: 'Broken Paver Footpath', icon: '🧱', defaultDesc: 'Cracked and displaced walking slabs hazardous for pedestrians and senior citizens.' },
-  { id: 'streetlight', label: 'Broken Streetlight', icon: '💡', defaultDesc: 'Non-functioning streetlight pole causing complete nighttime blackout.' },
-  { id: 'manhole', label: 'Open / Broken Drain', icon: '⚠️', defaultDesc: 'Missing or broken sewer cover creating urgent fall hazard.' },
-  { id: 'water_leakage', label: 'Drinking Water Burst', icon: '💧', defaultDesc: 'Underground drinking water pipeline fracture gushing onto the road.' },
-  { id: 'dead_animal', label: 'Dead Animal Removal', icon: '🐾', defaultDesc: 'Urgent municipal sanitation request for stray animal carcass removal.' },
-  { id: 'road_damage', label: 'Road Caving / Sinking', icon: '🚧', defaultDesc: 'Significant road caving and structural bitumen deformation.' },
+const CATEGORIES: { id: IssueCategory; label: string; code: string; defaultDesc: string }[] = [
+  { id: 'pothole', label: 'Pothole & Road Cavity', code: 'RD-POT', defaultDesc: 'Hazardous asphalt road pothole causing vehicle traffic slowdown and safety risk.' },
+  { id: 'fallen_tree', label: 'Fallen Tree / Road Obstruction', code: 'RD-TRE', defaultDesc: 'Uprooted tree or heavy timber blocking municipal vehicle traffic and transit lane.' },
+  { id: 'exposed_wires', label: 'Dangling Electric Conductor', code: 'EL-WIR', defaultDesc: 'Low-hanging or snapped 440V power wire creating immediate electrical and fire hazard.' },
+  { id: 'garbage', label: 'Solid Waste Bin Overflow', code: 'WM-GRB', defaultDesc: 'Overflowing municipal garbage bin blocking pedestrian walkway and drainage.' },
+  { id: 'water_logging', label: 'Storm Drain Flood Inundation', code: 'DR-FLD', defaultDesc: 'Stagnant storm water accumulation due to blocked municipal drainage culvert.' },
+  { id: 'broken_footpath', label: 'Displaced Footpath Paver', code: 'PD-PAV', defaultDesc: 'Cracked and displaced concrete walking slabs hazardous for pedestrians.' },
+  { id: 'streetlight', label: 'Out-of-Service Streetlight', code: 'LT-STL', defaultDesc: 'Non-functioning municipal luminaire pole causing complete nighttime blackout.' },
+  { id: 'manhole', label: 'Uncovered Drain Chamber', code: 'SW-MNH', defaultDesc: 'Missing or fractured sewer manhole cover creating open fall hazard.' },
+  { id: 'water_leakage', label: 'Main Pipeline Fracture', code: 'WS-LKG', defaultDesc: 'Underground potable water supply main pipeline fracture discharging onto roadway.' },
+  { id: 'dead_animal', label: 'Stray Animal Sanitation', code: 'SN-ANM', defaultDesc: 'Urgent municipal health request for stray animal carcass removal.' },
+  { id: 'road_damage', label: 'Bitumen Subsidence / Caving', code: 'RD-SUB', defaultDesc: 'Significant road asphalt caving and structural bitumen deformation.' },
 ];
 
 export default function ReportForm() {
@@ -269,35 +269,35 @@ export default function ReportForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 50m Spatial Deduplication Warning Banner */}
       {nearbyDuplicate && (
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl space-y-3 text-xs text-amber-950 shadow-sm animate-pulse-subtle">
+        <div className="p-4 bg-amber-950/40 border border-[#D95F02]/50 rounded-2xl space-y-3 text-xs text-amber-200 shadow-lg">
           <div className="flex items-start space-x-2.5">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-[#D95F02] shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-bold text-amber-900 text-sm">
-                Duplicate Report Detected within 50 Meters ({nearbyDuplicate.distanceMeters}m away)
+              <h4 className="font-bold text-amber-300 text-sm">
+                Existing Ticket within {nearbyDuplicate.distanceMeters} Meters Detected
               </h4>
-              <p className="text-amber-800 mt-1 leading-relaxed">
-                Ticket <span className="font-mono font-bold text-amber-950">{nearbyDuplicate.issue.complaint_number}</span> (
-                <em>"{nearbyDuplicate.issue.title}"</em>) was already registered at this location. To prevent ticket spamming, you can attach your photo as supporting evidence & upvote the existing ticket!
+              <p className="text-amber-200/90 mt-1 leading-relaxed text-xs">
+                Ticket <span className="font-mono-data font-bold text-[#D95F02]">{nearbyDuplicate.issue.complaint_number}</span> (
+                <em>"{nearbyDuplicate.issue.title}"</em>) is registered at this coordinate. Attach your photo as supporting evidence to upvote and escalate priority.
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-2 pt-1 text-xs">
             <button
               type="button"
               onClick={() => handleMergeDuplicate(nearbyDuplicate.issue.id)}
               disabled={!photoUrl}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-300 text-white font-bold rounded-xl shadow transition-all flex items-center space-x-1.5"
+              className="px-4 py-2 bg-[#D95F02] hover:bg-[#D95F02] disabled:bg-[#C9C4BA] text-slate-950 font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
             >
-              <span>🗳️ Upvote & Attach My Photo to #{nearbyDuplicate.issue.complaint_number}</span>
+              <span>+ Attach Evidence & Upvote #{nearbyDuplicate.issue.complaint_number}</span>
             </button>
             <button
               type="button"
               onClick={() => router.push(`/track/${nearbyDuplicate.issue.complaint_number}`)}
-              className="px-3.5 py-2 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold rounded-xl transition-all"
+              className="px-3.5 py-2 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-amber-300 border border-[#D95F02]/40 font-semibold rounded-xl transition-all"
             >
-              View Existing Ticket
+              View Ticket Docket
             </button>
           </div>
         </div>
@@ -305,7 +305,7 @@ export default function ReportForm() {
 
       {/* 1. Category Picker */}
       <div className="space-y-2">
-        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+        <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
           1. Select Defect Category
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -321,14 +321,16 @@ export default function ReportForm() {
                     setDescription(cat.defaultDesc);
                   }
                 }}
-                className={`p-3 rounded-xl border text-left flex items-center space-x-3 transition-all text-xs ${
+                className={`p-3 rounded-xl border text-left flex items-start space-x-2.5 transition-all text-xs ${
                   isSelected
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-950 font-bold ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                    ? 'border-[#D95F02] bg-amber-950/40 text-amber-300 font-bold ring-2 ring-amber-500/30'
+                    : 'border-[#C9C4BA] bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#4B5563]'
                 }`}
               >
-                <span className="text-xl">{cat.icon}</span>
-                <span className="font-semibold">{cat.label}</span>
+                <span className="font-mono-data text-[10px] bg-[#F0EEE9] text-[#D95F02] border border-[#D95F02]/40 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+                  {cat.code}
+                </span>
+                <span className="font-semibold text-xs leading-snug">{cat.label}</span>
               </button>
             );
           })}
@@ -338,11 +340,11 @@ export default function ReportForm() {
       {/* 2. Live Camera & AI Detector */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-            2. Live Camera Capture & YOLOv8 Verification
+          <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
+            2. Edge Computer Vision Scanner (YOLOv8)
           </label>
-          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            Auto-Compression & Background AI Active
+          <span className="text-[10px] font-semibold text-[#1A56A4] bg-[#EEF4FF] border border-[#1A56A4]/40 px-2 py-0.5 rounded-full">
+            Edge Model Ready
           </span>
         </div>
         <CameraCapture
@@ -352,91 +354,91 @@ export default function ReportForm() {
       </div>
 
       {/* 3. Real-Time GPS & Real-World Address Resolver */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+      <div className="glass-card rounded-2xl p-4.5 space-y-3 shadow-xl border border-[#C9C4BA]">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
-            <LocateFixed className="w-4 h-4 text-emerald-600" />
-            <span>3. Current Physical Location & Ward Routing</span>
+          <span className="text-xs font-bold text-[#D95F02] flex items-center space-x-1.5 uppercase tracking-wider">
+            <LocateFixed className="w-4 h-4 text-[#D95F02]" />
+            <span>3. PostGIS Spatial Ward Jurisdiction</span>
           </span>
           <button
             type="button"
             onClick={fetchCurrentLocation}
             disabled={isLocating}
-            className="text-xs text-white bg-emerald-600 hover:bg-emerald-500 font-bold flex items-center space-x-1.5 px-3 py-1.5 rounded-lg shadow-sm transition-all"
+            className="text-xs text-slate-950 bg-[#D95F02] hover:bg-[#D95F02] font-bold flex items-center space-x-1.5 px-3 py-1.5 rounded-lg shadow-xs transition-all"
           >
             <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
-            <span>{isLocating ? 'Acquiring GPS...' : 'Refresh GPS Location'}</span>
+            <span>{isLocating ? 'Acquiring...' : 'Re-Scan GPS'}</span>
           </button>
         </div>
 
         {gpsStatus === 'granted' && (
-          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center justify-between">
+          <div className="p-2.5 bg-[#EDFBF0]/70 border border-[#176B3A]/80 rounded-xl text-xs text-[#176B3A] flex items-center justify-between">
             <span className="flex items-center space-x-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span className="font-semibold">Live GPS Location Confirmed</span>
+              <CheckCircle className="w-4 h-4 text-[#176B3A] shrink-0" />
+              <span className="font-semibold">Live Fix Confirmed</span>
             </span>
-            {accuracy && <span className="font-mono text-[10px] bg-emerald-200/70 px-2 py-0.5 rounded text-emerald-950 font-bold">±{accuracy}m Accuracy</span>}
+            {accuracy && <span className="font-mono-data text-[10px] bg-emerald-900 px-2 py-0.5 rounded font-bold text-emerald-200">Â±{accuracy}m Accuracy</span>}
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Assigned Ward / Jurisdiction</span>
-            <p className="font-bold text-slate-900 mt-0.5 text-sm">{wardDisplay}</p>
-            <p className="text-[11px] text-emerald-700 font-semibold">{deptDisplay}</p>
+          <div className="bg-[#F0EEE9]/80 p-3.5 rounded-xl border border-[#C9C4BA]">
+            <span className="text-[10px] uppercase font-bold text-[#6B6860] block">Jurisdictional Ward</span>
+            <p className="font-bold text-[#1E2328] mt-0.5 text-sm">{wardDisplay}</p>
+            <p className="text-[11px] text-[#1A56A4] font-semibold">{deptDisplay}</p>
           </div>
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-center">
-            <span className="text-[10px] uppercase font-bold text-slate-400">Exact GPS Coordinates</span>
-            <p className="font-mono text-slate-900 font-bold mt-0.5 text-xs">
+          <div className="bg-[#F0EEE9]/80 p-3.5 rounded-xl border border-[#C9C4BA] flex flex-col justify-center">
+            <span className="text-[10px] uppercase font-bold text-[#6B6860] block">Geospatial Coordinates</span>
+            <p className="font-mono-data text-[#D95F02] font-bold mt-0.5 text-xs">
               Lat: {latitude.toFixed(6)}, Lng: {longitude.toFixed(6)}
             </p>
-            <span className="text-[10px] text-slate-500 font-medium truncate">
-              {resolvedAddress?.display_name ? resolvedAddress.display_name.slice(0, 45) + '...' : 'Reverse geocoding matched'}
+            <span className="text-[10px] text-[#6B6860] truncate mt-0.5">
+              {resolvedAddress?.display_name ? resolvedAddress.display_name.slice(0, 45) + '...' : 'Geocoding matched'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 4. Issue Title & Landmark (with Voice Dictation) */}
+      {/* 4. Issue Title & Landmark */}
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
-            Summary / Title
+          <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider mb-1">
+            4. Docket Summary / Title
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Hazardous asphalt pothole near GT Road"
-            className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 font-medium text-slate-900"
+            placeholder="e.g. Hazardous asphalt road pothole near GT Road junction"
+            className="w-full px-3.5 py-2.5 text-xs bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-medium text-[#1E2328] placeholder-slate-500"
             required
           />
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-bold text-slate-700">
-              Description & Specific Landmark
+            <label className="block text-xs font-bold text-[#4B5563] uppercase tracking-wider">
+              Field Evidence Description
             </label>
             <button
               type="button"
               onClick={startVoiceDictation}
-              className={`text-[11px] font-bold flex items-center space-x-1 px-2.5 py-1 rounded-lg border transition-all ${
+              className={`text-[11px] font-semibold flex items-center space-x-1 px-2.5 py-1 rounded-lg border transition-all ${
                 isListening
-                  ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  ? 'bg-rose-600 text-[#1E2328] border-rose-700 animate-pulse'
+                  : 'bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#4B5563] border-[#C9C4BA]'
               }`}
             >
               {isListening ? (
                 <>
                   <MicOff className="w-3 h-3" />
-                  <span>Listening...</span>
+                  <span>Recording...</span>
                 </>
               ) : (
                 <>
-                  <Mic className="w-3 h-3 text-emerald-600" />
-                  <span>Dictate Description (Voice)</span>
+                  <Mic className="w-3 h-3 text-[#D95F02]" />
+                  <span>Voice Dictate</span>
                 </>
               )}
             </button>
@@ -445,15 +447,15 @@ export default function ReportForm() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            placeholder="Add landmark or specific hazard details (or click Voice Dictation above)..."
-            className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 font-medium text-slate-900"
+            placeholder="Specify physical landmarks, lane direction, or hazard risks..."
+            className="w-full px-3.5 py-2.5 text-xs bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-medium text-[#1E2328] placeholder-slate-500"
           />
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center space-x-2">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+        <div className="p-3 bg-[#FEF2F2]/40 border border-[#B91C1C] rounded-xl text-xs text-[#B91C1C] flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -462,13 +464,13 @@ export default function ReportForm() {
       <button
         type="submit"
         disabled={isSubmitting || !photoUrl}
-        className="w-full py-4 px-4 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg hover:shadow-emerald-600/30 active:scale-98 transition-all flex items-center justify-center space-x-2"
+        className="w-full py-4 px-4 bg-[#D95F02] hover:bg-[#D95F02] disabled:bg-[#C9C4BA] text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-500/20 active:scale-98 transition-all flex items-center justify-center space-x-2"
       >
         {isSubmitting ? (
-          <span>Submitting Work Order...</span>
+          <span>Generating Official Municipal Docket...</span>
         ) : (
           <>
-            <span>Submit Complaint & Generate Receipt</span>
+            <span>Register Official Municipal Grievance Docket</span>
             <ArrowRight className="w-4 h-4" />
           </>
         )}

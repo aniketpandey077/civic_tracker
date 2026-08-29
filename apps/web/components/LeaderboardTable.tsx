@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { Trophy, AlertOctagon, ArrowUpRight, ShieldCheck, Flame } from 'lucide-react';
@@ -20,44 +20,44 @@ export default function LeaderboardTable({
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-400 uppercase font-bold text-[10px]">
+            <tr className="border-b border-[#C9C4BA] text-[#6B6860] uppercase font-bold text-[10px]">
               <th className="pb-2 pl-2">Rank</th>
               <th className="pb-2">Zone / Department</th>
               <th className="pb-2 text-center">Open Tickets</th>
-              <th className="pb-2 text-center text-rose-600">Overdue SLA</th>
+              <th className="pb-2 text-center text-[#D95F02]">Overdue SLA</th>
               <th className="pb-2 text-right pr-2">Avg Days Unresolved</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-800/80">
             {accountabilityData.map((row, idx) => {
               const hasCritical = row.overdue_count > 0;
               return (
                 <tr
                   key={row.zone_id}
-                  className={`hover:bg-slate-50 transition-colors ${
-                    hasCritical ? 'bg-rose-50/40' : ''
+                  className={`hover:bg-[#E8E5DF]/60 transition-colors ${
+                    hasCritical ? 'bg-amber-950/20' : ''
                   }`}
                 >
-                  <td className="py-3 pl-2 font-mono font-bold text-slate-500">
+                  <td className="py-3 pl-2 font-mono-data font-bold text-[#6B6860]">
                     #{idx + 1}
                   </td>
                   <td className="py-3">
-                    <div className="font-bold text-slate-900">{row.zone_name}</div>
-                    <div className="text-[11px] text-slate-400">{row.department}</div>
+                    <div className="font-extrabold text-white">{row.zone_name}</div>
+                    <div className="text-[11px] text-[#1A56A4]">{row.department}</div>
                   </td>
-                  <td className="py-3 text-center font-mono font-semibold text-slate-700">
+                  <td className="py-3 text-center font-mono-data font-semibold text-[#4B5563]">
                     {row.open_issues}
                   </td>
                   <td className="py-3 text-center">
                     {row.overdue_count > 0 ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-600">
                         {row.overdue_count} Overdue
                       </span>
                     ) : (
-                      <span className="text-slate-400 font-mono">0</span>
+                      <span className="text-[#9CA3AF] font-mono-data">0</span>
                     )}
                   </td>
-                  <td className="py-3 text-right pr-2 font-mono font-bold text-slate-800">
+                  <td className="py-3 text-right pr-2 font-mono-data font-bold text-[#D95F02]">
                     {row.avg_days_unresolved}d
                   </td>
                 </tr>
@@ -73,54 +73,54 @@ export default function LeaderboardTable({
     <div className="overflow-x-auto">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-slate-200 text-slate-400 uppercase font-bold text-[10px]">
+          <tr className="border-b border-[#C9C4BA] text-[#6B6860] uppercase font-bold text-[10px]">
             <th className="pb-2 pl-2">Rank</th>
             <th className="pb-2">Zone / Department</th>
             <th className="pb-2 text-center">Resolved / Total</th>
-            <th className="pb-2 text-center text-emerald-600">Resolution Rate</th>
+            <th className="pb-2 text-center text-[#176B3A]">Resolution Rate</th>
             <th className="pb-2 text-right pr-2">Avg Fix Speed</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-800/80">
           {performanceData.map((row, idx) => {
             const isTop = idx === 0;
             return (
               <tr
                 key={row.zone_id}
-                className={`hover:bg-slate-50 transition-colors ${
-                  isTop ? 'bg-emerald-50/40' : ''
+                className={`hover:bg-[#E8E5DF]/60 transition-colors ${
+                  isTop ? 'bg-[#EDFBF0]/20' : ''
                 }`}
               >
-                <td className="py-3 pl-2 font-mono font-bold">
+                <td className="py-3 pl-2 font-mono-data font-bold">
                   {isTop ? (
-                    <span className="flex items-center text-emerald-700 font-extrabold">
-                      🥇 #1
+                    <span className="flex items-center text-[#176B3A] font-extrabold">
+                      ðŸ¥‡ #1
                     </span>
                   ) : (
-                    <span className="text-slate-500">#{idx + 1}</span>
+                    <span className="text-[#6B6860]">#{idx + 1}</span>
                   )}
                 </td>
                 <td className="py-3">
-                  <div className="font-bold text-slate-900">{row.zone_name}</div>
-                  <div className="text-[11px] text-slate-400">{row.department}</div>
+                  <div className="font-extrabold text-white">{row.zone_name}</div>
+                  <div className="text-[11px] text-[#1A56A4]">{row.department}</div>
                 </td>
-                <td className="py-3 text-center font-mono font-semibold text-slate-700">
+                <td className="py-3 text-center font-mono-data font-semibold text-[#4B5563]">
                   {row.resolved_count} / {row.total_count}
                 </td>
                 <td className="py-3 text-center">
-                  <div className="inline-flex items-center space-x-1.5">
-                    <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="inline-flex items-center space-x-2">
+                    <div className="w-16 h-2 bg-[#F0EEE9] rounded-full overflow-hidden border border-[#C9C4BA]">
                       <div
-                        className="h-full bg-emerald-500 rounded-full"
+                        className="h-full bg-[#176B3A] rounded-full"
                         style={{ width: `${row.resolution_rate_percent}%` }}
                       />
                     </div>
-                    <span className="font-mono font-bold text-emerald-700">
+                    <span className="font-mono-data font-bold text-[#176B3A]">
                       {row.resolution_rate_percent}%
                     </span>
                   </div>
                 </td>
-                <td className="py-3 text-right pr-2 font-mono font-bold text-emerald-800">
+                <td className="py-3 text-right pr-2 font-mono-data font-bold text-[#176B3A]">
                   {row.avg_resolution_days}d
                 </td>
               </tr>

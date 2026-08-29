@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import MapView from '@/components/MapView';
@@ -8,9 +8,11 @@ import { Map, Flame, ShieldAlert, CheckCircle, Clock, PlusCircle } from 'lucide-
 import Link from 'next/link';
 
 export default function MapPage() {
+  const [mounted, setMounted] = useState(false);
   const [issues, setIssues] = useState<CivicIssue[]>([]);
 
   useEffect(() => {
+    setMounted(true);
     setIssues(getStoredIssues());
   }, []);
 
@@ -19,70 +21,72 @@ export default function MapPage() {
   const inProgressCount = issues.filter(i => i.status === 'in_progress').length;
   const overdueCount = issues.filter(i => i.status !== 'resolved' && new Date(i.deadline_at).getTime() < Date.now()).length;
 
-  return (
+  if (!mounted) return null;
+
+    return (
     <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
-              <Map className="w-5 h-5" />
+            <span className="p-2 rounded-xl bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4]/40">
+              <Map className="w-5 h-5 text-[#1A56A4]" />
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              City-Wide Civic Issue Map
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E2328] tracking-tight">
+              Geospatial Municipal Infrastructure Map
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-[#6B6860] mt-1">
             Real-time geospatial tracking with density heatmap overlay and municipal ward boundaries
           </p>
         </div>
 
         <Link
           href="/report"
-          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center space-x-1.5 self-start sm:self-auto"
+          className="px-5 py-2.5 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 text-xs font-extrabold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5 self-start sm:self-auto"
         >
-          <PlusCircle className="w-4 h-4" />
+          <PlusCircle className="w-4 h-4 text-slate-950" />
           <span>Report at Current Location</span>
         </Link>
       </div>
 
       {/* Mini Status Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center space-x-3">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#6366F1]" />
+        <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] flex items-center space-x-3">
+          <div className="w-3.5 h-3.5 rounded-full bg-cyan-400" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400">Pending</span>
-            <p className="text-base font-bold text-slate-900">{pendingCount} tickets</p>
+            <span className="text-[10px] uppercase font-bold text-[#6B6860]">Pending</span>
+            <p className="text-base font-extrabold text-[#1E2328] font-mono-data">{pendingCount} tickets</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center space-x-3">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#EAB308]" />
+        <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] flex items-center space-x-3">
+          <div className="w-3.5 h-3.5 rounded-full bg-[#D95F02]" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400">In Progress</span>
-            <p className="text-base font-bold text-slate-900">{inProgressCount} tickets</p>
+            <span className="text-[10px] uppercase font-bold text-[#6B6860]">In Progress</span>
+            <p className="text-base font-extrabold text-[#1E2328] font-mono-data">{inProgressCount} tickets</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center space-x-3">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#059669]" />
+        <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] flex items-center space-x-3">
+          <div className="w-3.5 h-3.5 rounded-full bg-emerald-400" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400">Resolved</span>
-            <p className="text-base font-bold text-emerald-700">{resolvedCount} tickets</p>
+            <span className="text-[10px] uppercase font-bold text-[#6B6860]">Resolved</span>
+            <p className="text-base font-extrabold text-[#176B3A] font-mono-data">{resolvedCount} tickets</p>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center space-x-3">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#E11D48]" />
+        <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] flex items-center space-x-3">
+          <div className="w-3.5 h-3.5 rounded-full bg-rose-500" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400">Overdue SLA</span>
-            <p className="text-base font-bold text-rose-700">{overdueCount} escalated</p>
+            <span className="text-[10px] uppercase font-bold text-[#6B6860]">Overdue SLA</span>
+            <p className="text-base font-extrabold text-rose-400 font-mono-data">{overdueCount} escalated</p>
           </div>
         </div>
       </div>
 
       {/* Main Map View */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
+      <div className="glass-card p-4 rounded-3xl border border-[#C9C4BA] shadow-2xl">
         <MapView issues={issues} showHeatmapDefault={false} />
       </div>
     </div>

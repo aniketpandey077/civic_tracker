@@ -1,11 +1,15 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
+
+// Both Navbar and Footer use useUserLocation (geolocation + localStorage).
+// ssr: false means they are never server-rendered → eliminates hydration mismatches.
+const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
+const Footer = dynamic(() => import('@/components/Footer'), { ssr: false });
 
 export const metadata: Metadata = {
-  title: 'CivicTrack — Report. Track. Verify. Resolve.',
-  description: 'A transparent, digital civic issue reporting and public accountability system with AI validation, geofencing, and resolution verification.',
+  title: 'CIVICTRACK — Municipal Infrastructure Grievance & Accountability System',
+  description: 'Official municipal civic defect registry featuring YOLOv8 edge computer vision, ward-level PostGIS routing, 15-day SLA compliance tracking, and citizen-verified evidence closure.',
 };
 
 export default function RootLayout({
@@ -14,10 +18,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="flex flex-col min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white">
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="bg-[#F0EEE9] text-[#1E2328] antialiased font-sans min-h-screen">
         <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}
         </main>
         <Footer />

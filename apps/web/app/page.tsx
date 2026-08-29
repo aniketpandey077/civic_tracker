@@ -3,24 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  Camera,
-  MapPin,
-  CheckCircle,
-  AlertTriangle,
-  ArrowRight,
-  Sparkles,
-  FileCheck,
-  Clock,
-  Shield,
-  ThumbsUp,
-  Search,
-  ExternalLink,
-  Flame,
-  LocateFixed,
-  Plus,
-  Navigation,
-  Wrench,
-  ShieldAlert
+  Camera, MapPin, CheckCircle, AlertTriangle, ArrowRight,
+  FileCheck, Clock, ThumbsUp, Search, LocateFixed,
+  Wrench, Activity
 } from 'lucide-react';
 import { getStoredIssues, getDashboardMetrics, upvoteIssue } from '@/lib/store';
 import { CivicIssue, DashboardMetrics } from '@/lib/types';
@@ -29,12 +14,15 @@ import { useUserLocation } from '@/lib/useUserLocation';
 import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
 import EvidenceModal from '@/components/EvidenceModal';
 
-export default function HomePage() {
-  const [issues, setIssues] = useState<CivicIssue[]>([]);
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [searchComplaint, setSearchComplaint] = useState('');
-  const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
 
+import { INITIAL_ISSUES } from '@/lib/seedData';
+
+export default function HomePage() {
+  const [issues, setIssues] = useState<CivicIssue[]>(INITIAL_ISSUES);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(getDashboardMetrics());
+  const [searchComplaint, setSearchComplaint] = useState('');
+
+  const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
   const userLocation = useUserLocation();
 
   const loadData = () => {
@@ -44,15 +32,10 @@ export default function HomePage() {
 
   useEffect(() => {
     loadData();
-
-    const handleStoreUpdate = () => {
-      loadData();
-    };
-
+    const handleStoreUpdate = () => loadData();
     if (typeof window !== 'undefined') {
       window.addEventListener('civictrack_store_updated', handleStoreUpdate);
     }
-
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('civictrack_store_updated', handleStoreUpdate);
@@ -60,193 +43,157 @@ export default function HomePage() {
     };
   }, []);
 
+
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchComplaint.trim()) {
-      window.location.href = `/track/${searchComplaint.trim()}`;
-    }
+    if (searchComplaint.trim()) window.location.href = `/track/${searchComplaint.trim()}`;
   };
 
   const handleUpvote = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    upvoteIssue(id);
-    loadData();
+    e.preventDefault(); e.stopPropagation();
+    upvoteIssue(id); loadData();
   };
 
-  // Nearest to farthest sorted issues relative to user's live GPS location
   const sortedIssues: SortedCivicIssue[] = sortIssuesByNearest(
-    userLocation.latitude,
-    userLocation.longitude,
-    issues
+    userLocation.latitude, userLocation.longitude, issues
   );
 
   return (
-    <div className="space-y-10 pb-12">
-      {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden bg-slate-900 text-white p-8 sm:p-14 border border-slate-800 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/95 to-slate-900/40 pointer-events-none" />
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-400">
-            <Sparkles className="w-4 h-4 animate-pulse" />
-            <span>
-              {userLocation.isLoaded ? `${userLocation.city} • Local Municipal Grievance Redressal` : 'AI-Powered Municipal Accountability Platform'}
-            </span>
+    <div className="space-y-8 pb-12">
+
+      {/* ── Hero Banner ─────────────────────────────────────────────── */}
+      <section className="relative rounded-2xl overflow-hidden bg-white border-2 border-[#C9C4BA] shadow-md p-6 sm:p-12">
+        {/* Hazard stripe at top edge */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#D95F02]" />
+        <div className="relative z-10 max-w-4xl space-y-6">
+
+          <div className="inline-flex items-center space-x-2 bg-[#EEF4FF] border border-[#1A56A4]/30 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#1A56A4]">
+            <Activity className="w-4 h-4 animate-pulse shrink-0" />
+            <span suppressHydrationWarning>{userLocation.isLoaded ? `${userLocation.city} Municipal Grievance & SLA Command` : 'Municipal Infrastructure Control System'}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            Report civic defects in {userLocation.isLoaded && userLocation.city !== 'Detecting location...' ? userLocation.city : 'your city'}. <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-              Hold municipal zones accountable.
-            </span>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#1E2328] leading-tight">
+            Municipal Infrastructure<br />Defect Docket & Audit System
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-            Live camera detection via YOLOv8, spatial routing by {userLocation.isLoaded && userLocation.city !== 'Detecting location...' ? userLocation.city : 'municipal'} ward boundaries, 15-day transparent SLAs, and verified before/after evidence confirmed by citizens.
+          <p className="text-sm sm:text-base text-[#6B6860] leading-relaxed max-w-3xl font-medium">
+            Edge computer vision validation via YOLOv8, PostGIS ward spatial routing, 15-day SLA compliance countdowns, 500-upvote emergency compression, and citizen-verified photo closure.
           </p>
 
-          {/* EXTRA-LARGE, HIGH-IMPACT COMMANDING REPORT CTA BUTTON */}
-          <div className="flex flex-wrap items-center gap-4 pt-4">
+          {/* Primary Actions */}
+          <div className="flex flex-wrap items-center gap-4 pt-2">
             <Link
               href="/report"
-              className="px-8 sm:px-10 py-5 sm:py-5.5 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black rounded-3xl shadow-2xl shadow-emerald-900/70 hover:shadow-emerald-500/50 hover:scale-[1.04] active:scale-[0.98] transition-all flex items-center space-x-4 ring-4 ring-emerald-400/30 group border border-emerald-300/40"
+              className="flex items-center space-x-3 px-8 py-4 rounded-2xl bg-[#B91C1C] hover:bg-[#991B1B] text-white font-extrabold text-sm tracking-wide shadow-xl animate-pulse hover:animate-none transition-all active:scale-95"
             >
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner shrink-0">
-                <Camera className="w-7 h-7 text-white" />
-              </div>
-              <div className="text-left">
-                <span className="block text-lg sm:text-2xl leading-none font-black tracking-tight drop-shadow-xs">
-                  Report Civic Issue
-                </span>
-                <span className="block text-xs sm:text-sm font-semibold text-emerald-100/90 leading-tight mt-1">
-                  Live Camera Capture & YOLOv8 AI Scanner
-                </span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1.5 transition-transform shrink-0">
-                <ArrowRight className="w-5 h-5 text-white" />
-              </div>
+              <AlertTriangle className="w-5 h-5" />
+              <span className="uppercase tracking-widest">Report Civic Issue</span>
+              <span className="hidden sm:inline-block text-[10px] font-mono-data bg-white/20 px-2 py-0.5 rounded-md">
+                Live Scanner
+              </span>
             </Link>
-
             <Link
               href="/map"
-              className="px-6 py-5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-sm sm:text-base rounded-3xl transition-all flex items-center space-x-2.5 shadow-md hover:text-white"
+              className="px-6 py-4 rounded-2xl bg-[#EEF4FF] hover:bg-[#DBEAFE] text-[#1A56A4] border border-[#1A56A4]/30 font-bold text-xs sm:text-sm transition-all flex items-center space-x-2"
             >
-              <MapPin className="w-5 h-5 text-emerald-400" />
-              <span>Explore Live Map</span>
+              <MapPin className="w-4 h-4" />
+              <span>GIS Map Layer</span>
             </Link>
           </div>
 
-          {/* Quick Ticket Lookup */}
-          <form onSubmit={handleSearchSubmit} className="pt-3 max-w-md">
+
+
+          {/* Ticket Lookup */}
+          <form onSubmit={handleSearchSubmit} className="pt-2 max-w-md">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5" />
+              <Search className="w-4 h-4 text-[#6B6860] absolute left-3.5" />
               <input
                 type="text"
                 value={searchComplaint}
                 onChange={(e) => setSearchComplaint(e.target.value)}
-                placeholder="Track existing ticket e.g. CTR-2026-..."
-                className="w-full pl-10 pr-24 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs font-mono text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                placeholder="Track ticket docket ID (e.g. CTR-2026-...)"
+                className="w-full pl-10 pr-24 py-2.5 bg-white border-2 border-[#C9C4BA] rounded-xl text-xs font-mono-data text-[#1E2328] placeholder-[#9CA3AF] focus:outline-none focus:border-[#1A56A4]"
               />
-              <button
-                type="submit"
-                className="absolute right-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors"
-              >
-                Track
+              <button type="submit" className="absolute right-1.5 px-3 py-1.5 bg-[#D95F02] hover:bg-[#C04F00] text-white text-xs font-bold rounded-lg transition-colors">
+                Lookup
               </button>
             </div>
           </form>
         </div>
       </section>
 
-      {/* KPI Metrics Strip */}
+      {/* ── KPI Metrics Strip ───────────────────────────────────────── */}
       {metrics && (
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-              <span>Total Logged</span>
-              <FileCheck className="w-4 h-4 text-slate-400" />
+          <div className="bg-white border-2 border-[#C9C4BA] rounded-xl p-5 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-xs text-[#6B6860] font-semibold">
+              <span>Registered Dockets</span><FileCheck className="w-4 h-4" />
             </div>
-            <div className="text-3xl font-extrabold text-slate-900">{metrics.total_issues}</div>
-            <p className="text-[11px] text-slate-400">Validated by YOLOv8 model</p>
+            <div className="text-3xl font-extrabold text-[#1E2328] font-mono-data">{metrics.total_issues}</div>
+            <p className="text-[11px] text-[#6B6860] font-medium">YOLOv8 Edge Validated</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-xs text-emerald-700 font-medium">
-              <span>Resolved & Verified</span>
-              <CheckCircle className="w-4 h-4 text-emerald-600" />
+          <div className="bg-white border-2 border-[#C9C4BA] rounded-xl p-5 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-xs text-[#176B3A] font-semibold">
+              <span>Verified Resolved</span><CheckCircle className="w-4 h-4" />
             </div>
-            <div className="text-3xl font-extrabold text-emerald-600">{metrics.resolved_issues}</div>
-            <p className="text-[11px] text-slate-400">With Before/After photo proof</p>
+            <div className="text-3xl font-extrabold text-[#176B3A] font-mono-data">{metrics.resolved_issues}</div>
+            <p className="text-[11px] text-[#6B6860] font-medium">Citizen Vote Confirmed</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-xs text-amber-700 font-medium">
-              <span>In Progress</span>
-              <Clock className="w-4 h-4 text-amber-500" />
+          <div className="bg-white border-2 border-[#C9C4BA] rounded-xl p-5 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-xs text-[#1A56A4] font-semibold">
+              <span>Active Dispatch</span><Clock className="w-4 h-4" />
             </div>
-            <div className="text-3xl font-extrabold text-amber-500">{metrics.active_issues}</div>
-            <p className="text-[11px] text-slate-400">Within 15-day resolution target</p>
+            <div className="text-3xl font-extrabold text-[#1A56A4] font-mono-data">{metrics.active_issues}</div>
+            <p className="text-[11px] text-[#6B6860] font-medium">Within 15-Day Target SLA</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-xs text-rose-700 font-medium">
-              <span>Overdue SLA</span>
-              <AlertTriangle className="w-4 h-4 text-rose-500" />
+          <div className="bg-white border-2 border-[#C9C4BA] rounded-xl p-5 shadow-sm space-y-1">
+            <div className="flex items-center justify-between text-xs text-[#D95F02] font-semibold">
+              <span>SLA Violations</span><AlertTriangle className="w-4 h-4" />
             </div>
-            <div className="text-3xl font-extrabold text-rose-600">{metrics.overdue_issues}</div>
-            <p className="text-[11px] text-slate-400">On Public Accountability board</p>
+            <div className="text-3xl font-extrabold text-[#D95F02] font-mono-data">{metrics.overdue_issues}</div>
+            <p className="text-[11px] text-[#6B6860] font-medium">Public Audit Board</p>
           </div>
         </section>
       )}
 
-      {/* Shared Interactive Map */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* ── GIS Map ─────────────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#C9C4BA] pb-3">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              City-Wide Civic Heatmap & Issue Map
-            </h2>
-            <p className="text-xs text-slate-500">
-              Live geospatial tickets mapped to {userLocation.isLoaded ? `${userLocation.city}` : 'local'} municipal ward boundaries
+            <h2 className="text-xl font-extrabold text-[#1E2328] tracking-tight">Geospatial Ward Infrastructure Map</h2>
+            <p className="text-xs text-[#6B6860] font-medium mt-0.5">
+              Live spatial coordinates mapped to <span suppressHydrationWarning>{userLocation.isLoaded ? userLocation.city : 'municipal'}</span> ward boundaries
             </p>
           </div>
-          <Link
-            href="/map"
-            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-1"
-          >
-            <span>View Full Map</span>
-            <ArrowRight className="w-4 h-4" />
+          <Link href="/map" className="text-xs font-bold text-[#1A56A4] hover:text-[#1245A8] flex items-center space-x-1">
+            <span>Full GIS Map Layer</span><ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white border-2 border-[#C9C4BA] rounded-xl p-4 shadow-sm">
           <MapView issues={issues} />
         </div>
       </section>
 
-      {/* Public Nearest-to-Farthest Live Feed & Fix Defect Actions */}
+      {/* ── Issue Feed ──────────────────────────────────────────────── */}
       <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#C9C4BA] pb-3">
           <div>
             <div className="flex items-center space-x-2">
-              <span className="p-1.5 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">
-                📍 Nearest First
-              </span>
-              <h2 className="text-xl font-bold text-slate-900">
-                Civic Reports Ordered by Distance ({sortedIssues.length})
+              <span className="badge-orange font-bold text-xs px-2.5 py-0.5 rounded-full">Proximity Ordered</span>
+              <h2 className="text-xl font-extrabold text-[#1E2328] tracking-tight">
+                Defect Docket Registry ({sortedIssues.length})
               </h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Live complaints sorted from <strong>nearest to farthest</strong> relative to your GPS coordinates ({userLocation.city}).
+            <p className="text-xs text-[#6B6860] font-medium mt-1">
+              Live grievances sorted by distance relative to your GPS fix (<span suppressHydrationWarning>{userLocation.city}</span>).
             </p>
           </div>
-
-          <Link
-            href="/my-complaints"
-            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center space-x-1"
-          >
-            <span>View All ({issues.length})</span>
-            <ArrowRight className="w-4 h-4" />
+          <Link href="/my-complaints" className="text-xs font-bold text-[#1A56A4] hover:text-[#1245A8] flex items-center space-x-1">
+            <span>View All Dockets ({issues.length})</span><ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -260,117 +207,101 @@ export default function HomePage() {
             return (
               <div
                 key={issue.id}
-                className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4"
+                className="bg-white border-2 border-[#C9C4BA] rounded-xl p-5 flex flex-col justify-between space-y-4 hover:border-[#D95F02] hover:shadow-md transition-all"
               >
                 <div className="space-y-3">
-                  {/* Header Badge Row */}
+                  {/* Badge row */}
                   <div className="flex items-center justify-between flex-wrap gap-1">
-                    <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono-data font-bold text-[#1E2328] bg-[#F0EEE9] border border-[#C9C4BA] px-2 py-0.5 rounded-lg">
                       {issue.complaint_number}
                     </span>
-
                     <div className="flex items-center space-x-1">
-                      {/* Distance Badge */}
-                      <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center space-x-1">
-                        <Navigation className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span className="badge-orange text-[10px] font-mono-data font-bold px-2 py-0.5 rounded-full flex items-center space-x-1">
+                        <LocateFixed className="w-3 h-3 shrink-0" />
                         <span>{issue.distanceFormatted}</span>
                       </span>
-
-                      {/* AI Analysis Status / Severity Badge */}
-                      {issue.ai_analysis_status === 'analyzing' ? (
-                        <span className="bg-purple-100 text-purple-900 border border-purple-300 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center space-x-1 animate-pulse">
-                          <Sparkles className="w-3 h-3 text-purple-600 shrink-0" />
-                          <span>AI Analyzing...</span>
-                        </span>
-                      ) : issue.ai_severity !== undefined ? (
-                        <span
-                          className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
-                            issue.ai_severity < 30
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                              : issue.ai_severity <= 60
-                              ? 'bg-amber-100 text-amber-800 border-amber-300'
-                              : 'bg-rose-100 text-rose-800 border-rose-300'
-                          }`}
-                        >
-                          Sev: {issue.ai_severity}/100 {issue.ai_count !== undefined ? `(${issue.ai_count} def)` : ''}
-                        </span>
-                      ) : null}
-
-                      {/* 45-Day Escalated Badge */}
-                      {issue.escalation_email_sent_at && (
-                        <span className="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center space-x-1">
-                          <ShieldAlert className="w-3 h-3 text-rose-600" />
-                          <span>45d Escalated</span>
+                      {issue.ai_severity !== undefined && (
+                        <span className={`text-[9px] font-mono-data font-bold px-2 py-0.5 rounded-full ${
+                          issue.ai_severity < 30 ? 'badge-green' : issue.ai_severity <= 60 ? 'badge-blue' : 'badge-orange'
+                        }`}>
+                          Sev: {issue.ai_severity}/100
                         </span>
                       )}
-
+                      {issue.escalation_email_sent_at && (
+                        <span className="badge-red text-[9px] font-bold px-1.5 py-0.5 rounded-full">45d Escalated</span>
+                      )}
                       {isResolved ? (
-                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="badge-green text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" /> Resolved
                         </span>
                       ) : isOverdue ? (
-                        <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="badge-red text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" /> Overdue
                         </span>
                       ) : (
-                        <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
+                        <span className="badge-blue text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
                           {issue.status.replace('_', ' ')}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Thumbnail + Details */}
+                  {/* Thumbnail */}
                   <div className="flex space-x-3">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                    <div className="w-20 h-20 bg-[#E8E5DF] shrink-0 border border-[#C9C4BA] rounded-xl overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={issue.photo_url}
-                        alt={issue.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
+                      <img src={issue.photo_url} alt={issue.title} className="w-full h-full object-cover" />
                     </div>
                     <div className="min-w-0 flex-1 space-y-1">
                       <Link href={`/track/${issue.complaint_number}`}>
-                        <h3 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug hover:text-emerald-700 transition-colors">
+                        <h3 className="text-xs font-extrabold text-[#1E2328] line-clamp-2 leading-snug hover:text-[#D95F02] transition-colors">
                           {issue.title}
                         </h3>
                       </Link>
-                      <p className="text-[11px] text-slate-500 line-clamp-1">{issue.description}</p>
-                      <div className="text-[10px] text-slate-400 flex items-center space-x-1">
-                        <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <p className="text-[11px] text-[#6B6860] line-clamp-1">{issue.description}</p>
+                      <div className="text-[10px] text-[#6B6860] font-medium flex items-center space-x-1">
+                        <MapPin className="w-3 h-3 text-[#D95F02] shrink-0" />
                         <span className="truncate">{issue.zone_name}</span>
                       </div>
                     </div>
                   </div>
+
+                  {/* SLA bar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-[#6B6860] font-medium">
+                      <span>SLA: <strong className="font-mono-data text-[#D95F02]" suppressHydrationWarning>{diffDays > 0 ? `${diffDays} days left` : 'Expired'}</strong></span>
+                      <span>{issue.upvote_count >= 500 ? '5-Day Emergency' : '15-Day SLA'}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#E8E5DF] rounded-full overflow-hidden border border-[#C9C4BA]">
+                      <div
+                        className={`h-full ${isOverdue ? 'bg-[#D95F02]' : isResolved ? 'bg-[#176B3A]' : 'bg-[#1A56A4]'}`}
+                        style={{ width: `${Math.max(0, Math.min(100, (diffDays / 15) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Direct Action Buttons: Fix Defect & Upvote & Track */}
-                <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                {/* Actions */}
+                <div className="pt-3 border-t border-[#C9C4BA] flex items-center justify-between gap-2 text-xs">
                   <button
                     type="button"
                     onClick={() => setSelectedIssueForEvidence(issue)}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+                    className="px-3 py-1.5 bg-[#D95F02] hover:bg-[#C04F00] text-white font-extrabold text-xs rounded-xl shadow-sm transition-colors flex items-center space-x-1.5"
                   >
                     <Wrench className="w-3.5 h-3.5" />
-                    <span>🛠️ Fix Defect</span>
+                    <span>Resolve Defect</span>
                   </button>
-
                   <div className="flex items-center space-x-2">
                     <button
                       type="button"
                       onClick={(e) => handleUpvote(issue.id, e)}
-                      className="flex items-center space-x-1 text-slate-600 hover:text-emerald-600 bg-slate-50 hover:bg-emerald-50 px-2 py-1 rounded-lg border border-slate-200 transition-colors"
+                      className="flex items-center space-x-1 text-[#6B6860] hover:text-[#D95F02] bg-[#F0EEE9] hover:bg-[#FEF0E7] px-2 py-1 rounded-lg border border-[#C9C4BA] transition-colors"
                     >
-                      <ThumbsUp className="w-3 h-3" />
-                      <span className="font-bold text-[11px]">{issue.upvote_count}</span>
+                      <ThumbsUp className="w-3 h-3 text-[#D95F02]" />
+                      <span className="font-mono-data font-bold text-[11px]">{issue.upvote_count}</span>
                     </button>
-
-                    <Link
-                      href={`/track/${issue.complaint_number}`}
-                      className="text-emerald-600 font-bold text-xs flex items-center hover:underline"
-                    >
-                      Track <ArrowRight className="w-3 h-3 ml-0.5" />
+                    <Link href={`/track/${issue.complaint_number}`} className="text-[#1A56A4] hover:text-[#1245A8] font-bold text-xs flex items-center">
+                      Docket <ArrowRight className="w-3 h-3 ml-0.5" />
                     </Link>
                   </div>
                 </div>
@@ -380,7 +311,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Modal for Fix Defect / Upload Repair Photo */}
+      {/* Evidence Modal */}
       {selectedIssueForEvidence && (
         <EvidenceModal
           issue={selectedIssueForEvidence}
@@ -390,48 +321,29 @@ export default function HomePage() {
         />
       )}
 
-      {/* 4 Core Features / Accountability Principles */}
-      <section className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
-        <div className="max-w-2xl space-y-1">
-          <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Accountability Architecture</span>
-          <h3 className="text-2xl font-bold text-slate-900">How CivicTrack Closes the Loop</h3>
-          <p className="text-xs text-slate-500">
-            A transparent four-step process guaranteeing that reported defects cannot be quietly archived or ignored.
-          </p>
+      {/* ── Pipeline Architecture ───────────────────────────────────── */}
+      <section className="bg-white border-2 border-[#C9C4BA] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="max-w-3xl space-y-1">
+          <span className="text-xs font-bold text-[#1A56A4] uppercase tracking-wider">System Architecture & Protocol</span>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-[#1E2328] tracking-tight">Four-Stage Municipal Resolution Pipeline</h3>
+          <p className="text-xs text-[#6B6860] font-medium">Cryptographically and spatially-tracked pipeline enforcing zero unverified ticket closures.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-xs">
-          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center">1</div>
-            <h4 className="font-bold text-slate-900 text-sm">Computer Vision Validation</h4>
-            <p className="text-slate-600 leading-relaxed">
-              Camera snaps live evidence. YOLOv8 model calculates confidence and labels defects (potholes, garbage, streetlights) on-site.
-            </p>
-          </div>
-
-          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center">2</div>
-            <h4 className="font-bold text-slate-900 text-sm">PostGIS Spatial Boundary</h4>
-            <p className="text-slate-600 leading-relaxed">
-              Point-in-polygon math assigns tickets to the exact municipal ward and department (PWD, SWM, JVVNL, PHED).
-            </p>
-          </div>
-
-          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center">3</div>
-            <h4 className="font-bold text-slate-900 text-sm">500-Upvote Urgency Rule</h4>
-            <p className="text-slate-600 leading-relaxed">
-              15-day target SLA. If 500 community members upvote an urgent hazard, the resolution window compresses to 5 days.
-            </p>
-          </div>
-
-          <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center">4</div>
-            <h4 className="font-bold text-slate-900 text-sm">Citizen Confirmation</h4>
-            <p className="text-slate-600 leading-relaxed">
-              Staff upload Before/After evidence. Citizens vote Yes/No to verify the repair is physically completed before closing.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          {[
+            { step: '01', color: '#D95F02', label: 'YOLOv8 Edge Scanner', desc: 'Live camera capture feeds YOLOv8 edge computer vision model to verify presence of defect class and compute confidence.' },
+            { step: '02', color: '#1A56A4', label: 'PostGIS Ward Route', desc: 'Point-in-polygon spatial math binds ticket to specific municipal ward boundary and responsible department head.' },
+            { step: '03', color: '#D95F02', label: '500-Upvote Compression', desc: 'Standard 15-day target SLA compresses to 5-day emergency SLA if community upvote threshold crosses 500 votes.' },
+            { step: '04', color: '#176B3A', label: 'Citizen Evidence Vote', desc: "Contractor photo upload moves ticket to pending status. Ticket closes to Resolved strictly when citizens vote Yes." },
+          ].map(({ step, color, label, desc }) => (
+            <div key={step} className="p-4 rounded-xl bg-[#F0EEE9] border border-[#C9C4BA] space-y-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-extrabold text-xs" style={{ backgroundColor: color }}>
+                {step}
+              </div>
+              <h4 className="font-bold text-[#1E2328] text-sm">{label}</h4>
+              <p className="text-[#6B6860] text-[11px] leading-relaxed">{desc}</p>
+            </div>
+          ))}
         </div>
       </section>
     </div>

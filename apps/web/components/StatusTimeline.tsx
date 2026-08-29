@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { CheckCircle2, Clock, Circle, AlertTriangle, ShieldCheck } from 'lucide-react';
@@ -35,24 +35,23 @@ export default function StatusTimeline({
   const isOverdue = currentStatus !== 'resolved' && deadlineDate.getTime() < Date.now();
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div className="glass-card rounded-3xl p-6 border border-[#C9C4BA] shadow-xl space-y-6">
+      <div className="flex items-center justify-between border-b border-[#C9C4BA] pb-4">
         <div>
-          <h3 className="font-bold text-base text-slate-900">Resolution Progress Timeline</h3>
-          <p className="text-xs text-slate-500">Live immutable work order lifecycle</p>
+          <h3 className="font-extrabold text-base text-white">Resolution Progress Timeline</h3>
+          <p className="text-xs text-[#6B6860]">Live immutable work order lifecycle</p>
         </div>
         {isOverdue && (
-          <span className="text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
-            <AlertTriangle className="w-3.5 h-3.5" /> Overdue Escalation
+          <span className="text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-600 px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
+            <AlertTriangle className="w-3.5 h-3.5 text-[#D95F02]" /> Overdue Escalation
           </span>
         )}
       </div>
 
-      <div className="relative pl-6 space-y-8 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+      <div className="relative pl-6 space-y-8 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#C9C4BA]">
         {STEPS.map((step, idx) => {
           const isDone = idx < currentIndex || currentStatus === 'resolved';
           const isCurrent = idx === currentIndex && currentStatus !== 'resolved';
-          const isPending = idx > currentIndex && currentStatus !== 'resolved';
 
           const matchingHistory = history.find((h) => h.new_status === step.status);
 
@@ -62,10 +61,10 @@ export default function StatusTimeline({
               <div
                 className={`absolute -left-6 top-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                   isDone
-                    ? 'bg-emerald-600 border-emerald-600 text-white'
+                    ? 'bg-[#176B3A] border-emerald-400 text-slate-950 font-bold'
                     : isCurrent
-                    ? 'bg-white border-amber-500 text-amber-500 ring-4 ring-amber-100 animate-pulse'
-                    : 'bg-white border-slate-300 text-slate-300'
+                    ? 'bg-[#D95F02] border-[#D95F02] text-slate-950 ring-4 ring-amber-500/20 animate-pulse'
+                    : 'bg-[#E8E5DF] border-[#C9C4BA] text-slate-600'
                 }`}
               >
                 {isDone ? (
@@ -83,30 +82,30 @@ export default function StatusTimeline({
                   <span
                     className={`text-xs font-bold ${
                       isDone
-                        ? 'text-slate-900'
+                        ? 'text-white'
                         : isCurrent
-                        ? 'text-amber-700'
-                        : 'text-slate-400'
+                        ? 'text-[#D95F02]'
+                        : 'text-[#9CA3AF]'
                     }`}
                   >
                     {step.label}
                   </span>
                   {matchingHistory?.created_at && (
-                    <span className="text-[10px] text-slate-400 font-mono">
+                    <span className="text-[10px] text-[#6B6860] font-mono-data">
                       {new Date(matchingHistory.created_at).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}{' '}
-                      • {new Date(matchingHistory.created_at).toLocaleDateString()}
+                      â€¢ {new Date(matchingHistory.created_at).toLocaleDateString()}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
+                <p className="text-xs text-[#6B6860] leading-relaxed">{step.desc}</p>
 
                 {matchingHistory?.department_note && (
-                  <div className="mt-2 text-[11px] bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-700 space-y-0.5">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">
+                  <div className="mt-2 text-[11px] bg-[#F0EEE9]/80 border border-[#C9C4BA] rounded-xl p-2.5 text-[#4B5563] space-y-0.5">
+                    <span className="text-[9px] uppercase font-bold text-[#6B6860] block tracking-wider">
                       Note by {matchingHistory.changed_by || 'Department'}
                     </span>
                     <p>{matchingHistory.department_note}</p>

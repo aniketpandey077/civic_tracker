@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, RefreshCw, AlertCircle, Upload, SwitchCamera, CameraOff } from 'lucide-react';
@@ -33,45 +33,45 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
   const [lastImageInput, setLastImageInput] = useState<File | Blob | string | null>(null);
 
-  // 100% Authentic, verified civic infrastructure defect photos
+  // Official verified civic defect sample presets (No emojis)
   const samplePresets = [
     {
-      label: '🕳️ Asphalt Road Pothole',
+      label: 'Asphalt Pothole & Cavity',
       category: 'pothole',
       url: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '🌳 Fallen Tree on Roadway',
+      label: 'Fallen Tree Road Block',
       category: 'fallen_tree',
       url: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '⚡ Tangled Live Power Cables',
+      label: 'Exposed Electrical Cables',
       category: 'exposed_wires',
       url: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '🗑️ Overflowing Garbage Dump',
+      label: 'Garbage Dump Overflow',
       category: 'garbage',
       url: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '🦟 Stagnant Street Flood Pool',
+      label: 'Stagnant Storm Inundation',
       category: 'water_logging',
       url: 'https://images.unsplash.com/photo-1516214104703-d870798883c5?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '🧱 Broken Pedestrian Pavers',
+      label: 'Broken Footpath Paver',
       category: 'broken_footpath',
       url: 'https://images.unsplash.com/photo-1596495577886-d920f1fb7238?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '💡 Damaged Dark Streetlight',
+      label: 'Dark Streetlight Pole',
       category: 'streetlight',
       url: 'https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?auto=format&fit=crop&w=800&q=80',
     },
     {
-      label: '💧 Gushing Pipeline Fracture',
+      label: 'Pipeline Water Fracture',
       category: 'water_leakage',
       url: 'https://images.unsplash.com/photo-1527066579998-dbbae57f45ce?auto=format&fit=crop&w=800&q=80',
     },
@@ -252,10 +252,10 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
   return (
     <div className="space-y-4">
       {/* Viewport Area */}
-      <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 aspect-video max-h-80 flex items-center justify-center text-white shadow-inner">
-        {/* Active Live Video Stream */}
+      <div className="relative rounded-2xl overflow-hidden bg-[#E8E5DF] border border-[#C9C4BA] aspect-video max-h-80 flex items-center justify-center text-[#1E2328] shadow-inner">
+        {/* Active Live Video Stream with Radar Sweep Scanner */}
         {isCameraActive && !capturedPhoto && (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full overflow-hidden radar-grid">
             <video
               ref={videoRef}
               playsInline
@@ -263,23 +263,35 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               muted
               className="w-full h-full object-cover"
             />
-            {/* Viewfinder crosshairs */}
-            <div className="absolute inset-8 border-2 border-dashed border-emerald-400/60 rounded-xl pointer-events-none flex items-center justify-center">
-              <div className="w-12 h-12 border-2 border-emerald-400 rounded-full animate-pulse" />
+            
+            {/* Radar Sweep Animation Layer */}
+            <div className="animate-radar-sweep opacity-75" />
+
+            {/* Industrial Viewfinder Crosshair Grid */}
+            <div className="absolute inset-6 border-2 border-orange-500/80 rounded-none pointer-events-none flex items-center justify-center">
+              <div className="w-16 h-16 border-2 border-orange-400 rounded-none flex items-center justify-center">
+                <div className="w-2 h-2 bg-orange-500 animate-ping" />
+              </div>
+              <div className="absolute top-2 left-2 text-[9px] font-mono text-orange-400 tracking-wider">
+                SYS::RADAR_SCANNER_V8
+              </div>
+              <div className="absolute bottom-2 right-2 text-[9px] font-mono text-orange-400 tracking-wider">
+                YOLOV8_EDGE_ACTIVE
+              </div>
             </div>
 
-            {/* Live Indicator */}
-            <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-2 border border-slate-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>CAMERA ACTIVE</span>
+            {/* Live Status Indicator */}
+            <div className="absolute top-3 left-3 bg-white border border-[#C9C4BA] px-3 py-1 rounded-none text-xs font-mono font-bold flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
+              <span className="text-orange-400">CAMERA ACTIVE</span>
             </div>
 
             {/* Camera Control Action Bar */}
-            <div className="absolute top-3 right-3 flex items-center space-x-2">
+            <div className="absolute top-3 right-3 flex items-center space-x-2 z-10">
               <button
                 type="button"
                 onClick={stopCamera}
-                className="bg-rose-600/90 hover:bg-rose-600 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-bold border border-rose-400 shadow-md transition-colors flex items-center space-x-1.5"
+                className="bg-rose-700 hover:bg-rose-600 px-3 py-1.5 rounded-none text-[#1E2328] text-xs font-mono font-bold border border-rose-400 shadow-sm transition-colors flex items-center space-x-1.5 uppercase"
                 title="Turn Off Camera"
               >
                 <CameraOff className="w-3.5 h-3.5" />
@@ -288,7 +300,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               <button
                 type="button"
                 onClick={toggleCameraFacing}
-                className="bg-slate-900/80 hover:bg-slate-800 backdrop-blur p-2 rounded-full text-white border border-slate-700 shadow-md transition-colors"
+                className="bg-[#E8E5DF] hover:bg-[#C9C4BA] p-1.5 text-[#2D3340] border border-[#C9C4BA] shadow-sm transition-colors"
                 title="Switch Camera"
               >
                 <SwitchCamera className="w-4 h-4" />
@@ -312,7 +324,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
               <button
                 type="button"
                 onClick={retakePhoto}
-                className="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 backdrop-blur text-white text-xs font-medium rounded-lg border border-slate-700 shadow transition-colors flex items-center space-x-1.5"
+                className="px-3 py-1.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] backdrop-blur text-[#1E2328] text-xs font-medium rounded-lg border border-[#C9C4BA] shadow transition-colors flex items-center space-x-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retake Photo</span>
@@ -324,25 +336,25 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         {/* Initial Idle State */}
         {!isCameraActive && !capturedPhoto && (
           <div className="text-center p-6 space-y-3">
-            <div className="w-14 h-14 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto text-emerald-400">
+            <div className="w-14 h-14 rounded-full bg-[#C9C4BA] border border-[#C9C4BA] flex items-center justify-center mx-auto text-[#176B3A]">
               <Camera className="w-7 h-7" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-200">Capture Live Photo Evidence</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Connected directly to live detection backend (<code className="text-emerald-400">civicpulse-ai-95na.onrender.com</code>)
+              <p className="text-sm font-semibold text-[#2D3340]">Capture Live Photo Evidence</p>
+              <p className="text-xs text-[#6B6860] mt-1">
+                Connected directly to live detection backend (<code className="text-[#176B3A]">civicpulse-ai-95na.onrender.com</code>)
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => startCamera(facingMode)}
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center space-x-2"
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-[#176B3A] text-[#1E2328] text-xs font-bold rounded-xl shadow-lg transition-all flex items-center space-x-2"
               >
                 <Camera className="w-4 h-4" />
                 <span>Open Webcam / Camera</span>
               </button>
-              <label className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 shadow cursor-pointer transition-all flex items-center space-x-2">
+              <label className="px-4 py-2.5 bg-[#C9C4BA] hover:bg-slate-700 text-[#2D3340] text-xs font-semibold rounded-xl border border-slate-600 shadow cursor-pointer transition-all flex items-center space-x-2">
                 <Upload className="w-4 h-4" />
                 <span>Upload Photo File</span>
                 <input
@@ -362,8 +374,8 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
       {capturedPhoto && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-between shadow-2xs">
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
-            <span>Photo Attached • AI analysis runs in background upon submission</span>
+            <span className="w-2 h-2 rounded-full bg-[#176B3A] animate-ping shrink-0" />
+            <span>Photo Attached â€¢ AI analysis runs in background upon submission</span>
           </div>
           <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full">
             Ready to Submit
@@ -383,7 +395,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
             className="w-16 h-16 rounded-full bg-white p-1 border-4 border-emerald-500 shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
             aria-label="Take Photo"
           >
-            <div className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-500" />
+            <div className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-[#176B3A]" />
           </button>
         </div>
       )}
@@ -391,7 +403,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
       {/* Quick Sample Presets */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
         <span className="text-xs font-bold text-slate-700 block">
-          ⚡ Instant Photo Shortcuts (Click to Test Live AI Detection):
+          âš¡ Instant Photo Shortcuts (Click to Test Live AI Detection):
         </span>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {samplePresets.map((preset, idx) => (

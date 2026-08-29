@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { X, AlertTriangle, Share2, ShieldAlert, Sparkles, Building2 } from 'lucide-react';
@@ -23,11 +23,11 @@ export default function EscalationGraphicModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#E8E5DF]/70 backdrop-blur-xs">
       <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl relative space-y-4 animate-in fade-in zoom-in-95">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1"
+          className="absolute top-4 right-4 text-[#6B6860] hover:text-slate-600 p-1"
         >
           <X className="w-5 h-5" />
         </button>
@@ -39,17 +39,17 @@ export default function EscalationGraphicModal({
             </span>
             <h3 className="text-base font-bold text-slate-900">Automated Public Escalation Graphic</h3>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-[#9CA3AF] mt-0.5">
             Auto-composited upon SLA deadline breach and published to public accountability channels
           </p>
         </div>
 
         {/* Composited Social Poster Card */}
-        <div className="rounded-2xl overflow-hidden border-2 border-critical bg-slate-950 text-white relative shadow-xl">
+        <div className="rounded-2xl overflow-hidden border-2 border-critical bg-[#F0EEE9] text-[#1E2328] relative shadow-xl">
           {/* Header Banner */}
           <div className="bg-critical px-4 py-2 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <AlertTriangle className="w-4 h-4 text-white animate-bounce" />
+              <AlertTriangle className="w-4 h-4 text-[#1E2328] animate-bounce" />
               <span className="font-extrabold text-xs tracking-wider uppercase">
                 CIVICTRACK ESCALATION NOTICE
               </span>
@@ -72,36 +72,36 @@ export default function EscalationGraphicModal({
             {/* Overdue Badge */}
             <div className="absolute top-3 left-3 bg-red-600/90 backdrop-blur border border-red-400 px-3 py-1.5 rounded-xl shadow-lg">
               <span className="text-xs font-black uppercase tracking-wider block">
-                🚨 {daysElapsed} DAYS UNRESOLVED
+                ðŸš¨ {daysElapsed} DAYS UNRESOLVED
               </span>
               <span className="text-[10px] text-red-100 font-semibold">Exceeded 15-Day Public Target</span>
             </div>
 
             {/* Zone Tag & Details */}
             <div className="absolute bottom-3 left-3 right-3 space-y-1">
-              <div className="inline-flex items-center space-x-1.5 bg-slate-900/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs border border-slate-700">
-                <Building2 className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-bold text-slate-100">{issue.zone_name}</span>
-                <span className="text-slate-400">•</span>
-                <span className="text-emerald-400 font-semibold">{issue.department}</span>
+              <div className="inline-flex items-center space-x-1.5 bg-white backdrop-blur px-2.5 py-1 rounded-lg text-xs border border-[#C9C4BA]">
+                <Building2 className="w-3.5 h-3.5 text-[#D95F02]" />
+                <span className="font-bold text-[#1E2328]">{issue.zone_name}</span>
+                <span className="text-[#6B6860]">â€¢</span>
+                <span className="text-[#176B3A] font-semibold">{issue.department}</span>
               </div>
-              <p className="text-xs font-bold text-white line-clamp-1">{issue.title}</p>
+              <p className="text-xs font-bold text-[#1E2328] line-clamp-1">{issue.title}</p>
             </div>
           </div>
 
           {/* Footer of graphic */}
-          <div className="p-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[11px]">
-            <div className="text-slate-300">
-              Responsible Tag: <strong className="text-amber-400">@Jaipur_PWD_Official</strong>
+          <div className="p-3 bg-[#E8E5DF] border-t border-[#C9C4BA] flex items-center justify-between text-[11px]">
+            <div className="text-[#4B5563]">
+              Responsible Tag: <strong className="text-[#D95F02]">@Jaipur_PWD_Official</strong>
             </div>
-            <div className="text-[10px] text-slate-500 font-mono">
+            <div className="text-[10px] text-[#9CA3AF] font-mono">
               Track: civictrack.org/track/{issue.complaint_number}
             </div>
           </div>
         </div>
 
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-start space-x-2">
-          <Share2 className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+          <Share2 className="w-4 h-4 text-[#9CA3AF] shrink-0 mt-0.5" />
           <span>
             <strong>Simulated Social Channel Dispatch:</strong> In production, this image is queued for public ward feeds. CivicTrack guardrails ensure only department handles are tagged.
           </span>
@@ -110,7 +110,7 @@ export default function EscalationGraphicModal({
         <button
           type="button"
           onClick={onClose}
-          className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition-colors"
+          className="w-full py-2.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#1E2328] font-semibold text-xs rounded-xl transition-colors"
         >
           Close Preview
         </button>

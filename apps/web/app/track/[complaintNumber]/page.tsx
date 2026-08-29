@@ -20,7 +20,8 @@ import {
   Users,
   ShieldAlert,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Wrench
 } from 'lucide-react';
 import { getIssueByIdOrNumber, getStoredHistory, getStoredEvidence, upvoteIssue } from '@/lib/store';
 import { CivicIssue, IssueStatusHistory, ResolutionEvidence } from '@/lib/types';
@@ -31,6 +32,7 @@ import EvidenceModal from '@/components/EvidenceModal';
 import EscalationGraphicModal from '@/components/EscalationGraphicModal';
 
 export default function TrackComplaintPage() {
+  const [mounted, setMounted] = useState(false);
   const params = useParams();
   const searchParams = useSearchParams();
   const complaintNumber = params.complaintNumber as string;
@@ -44,40 +46,41 @@ export default function TrackComplaintPage() {
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
   const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [upvoteBanner, setUpvoteBanner] = useState<string | null>(
     justUpvoted ? '🗳️ Photo evidence attached & complaint upvoted successfully!' : null
   );
 
-  const loadTicketData = () => {
+  const loadData = () => {
     if (!complaintNumber) return;
     const found = getIssueByIdOrNumber(complaintNumber);
+    setIssue(found || null);
+
     if (found) {
-      setIssue(found);
-      const allHistory = getStoredHistory().filter(h => h.issue_id === found.id);
-      setHistory(allHistory);
-      const allEvidence = getStoredEvidence().find(e => e.issue_id === found.id);
-      setEvidence(allEvidence || null);
+      const allHist = getStoredHistory();
+      setHistory(allHist.filter(h => h.issue_id === found.id));
+
+      const allEv = getStoredEvidence();
+      const ev = allEv.find(e => e.issue_id === found.id);
+      setEvidence(ev || null);
     }
   };
 
   useEffect(() => {
-    loadTicketData();
-
-    // Reactive store update listener
-    const handleStoreUpdate = () => {
-      loadTicketData();
-    };
-
+    setMounted(true);
+    loadData();
+    const handleStoreUpdate = () => loadData();
     if (typeof window !== 'undefined') {
       window.addEventListener('civictrack_store_updated', handleStoreUpdate);
     }
-
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('civictrack_store_updated', handleStoreUpdate);
       }
     };
   }, [complaintNumber]);
+
+  if (!mounted) return null;
 
   if (!issue) {
     return (
@@ -114,208 +117,183 @@ export default function TrackComplaintPage() {
   const isOverdue = !isResolved && diffDays <= 0;
 
   const getSeverityBadgeClass = (severity: number) => {
-    if (severity < 30) return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-    if (severity <= 60) return 'bg-amber-100 text-amber-800 border-amber-300';
-    return 'bg-rose-100 text-rose-800 border-rose-300';
+    if (severity < 30) return 'bg-emerald-950 text-emerald-300 border-emerald-700';
+    if (severity <= 60) return 'bg-amber-950 text-amber-300 border-amber-700';
+    return 'bg-rose-950 text-rose-300 border-rose-700';
   };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Top Back Nav & Just Created Banner */}
       <div className="flex items-center justify-between">
         <Link
           href="/my-complaints"
-          className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
+          className="inline-flex items-center space-x-2 text-xs font-bold text-slate-300 hover:text-amber-400 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Complaints</span>
+          <span>Return to Docket Ledger</span>
         </Link>
 
         {justCreated && (
-          <span className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-800 bg-emerald-100 px-3.5 py-1 rounded-full border border-emerald-200 animate-bounce">
-            <CheckCircle className="w-4 h-4 text-emerald-600" />
-            <span>Ticket Successfully Created & Logged!</span>
+          <span className="inline-flex items-center space-x-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/90 px-3 py-1 rounded-full border border-emerald-700">
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+            <span>Docket Logged in Municipal Registry</span>
           </span>
         )}
       </div>
 
       {upvoteBanner && (
-        <div className="p-4 bg-purple-50 border border-purple-200 rounded-2xl text-xs font-bold text-purple-900 flex items-center justify-between shadow-sm">
+        <div className="p-3 bg-cyan-950/80 border border-cyan-500/40 text-xs font-semibold text-cyan-200 rounded-2xl flex items-center justify-between shadow-lg">
           <span>{upvoteBanner}</span>
-          <button onClick={() => setUpvoteBanner(null)} className="text-purple-600 hover:text-purple-900 font-bold ml-2">✕</button>
+          <button onClick={() => setUpvoteBanner(null)} className="text-cyan-400 hover:text-white font-bold ml-2">✕</button>
         </div>
       )}
 
-      {/* 45-Day Overdue Department Email Escalation Banner */}
       {issue.escalation_email_sent_at && (
-        <div className="p-4 bg-rose-50 border border-rose-300 rounded-2xl text-xs text-rose-950 space-y-2 shadow-sm animate-pulse-subtle">
+        <div className="p-4 bg-amber-950/40 border border-amber-500/40 text-xs text-amber-200 space-y-2 rounded-2xl shadow-lg">
           <div className="flex items-center space-x-2">
-            <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
-            <h4 className="font-bold text-rose-900 text-sm">
-              CRITICAL 45-DAY SLA VIOLATION: DEPARTMENT HEAD EMAIL ESCALATION DISPATCHED
+            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+            <h4 className="font-extrabold text-amber-300 text-xs uppercase tracking-wider">
+              Critical 45-Day SLA Violation — Department Head Escalation Dispatched
             </h4>
           </div>
-          <p className="text-rose-800 leading-relaxed">
-            This defect remained unresolved after 45 statutory days. An official municipal escalation email payload was automatically generated and dispatched to <span className="font-bold font-mono text-rose-950">{issue.department_email || 'department.head@jaipurmc.org'}</span> on {new Date(issue.escalation_email_sent_at).toLocaleString()}.
+          <p className="text-amber-200/90 leading-relaxed text-xs">
+            This defect remained unresolved past 45 statutory days. An official municipal escalation payload was dispatched to <span className="font-bold font-mono-data text-amber-400">{issue.department_email || 'department.head@jaipurmc.org'}</span> on {new Date(issue.escalation_email_sent_at).toLocaleString()}.
           </p>
         </div>
       )}
 
-      {/* Main Ticket Banner Card */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="space-y-2">
+      <div className="glass-card p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+          <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono font-bold text-xs sm:text-sm text-slate-900 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
+              <span className="font-mono-data font-bold text-xs text-amber-400 bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg">
                 {issue.complaint_number}
               </span>
 
               {isResolved ? (
-                <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                  <CheckCircle className="w-3.5 h-3.5" /> Resolved & Verified
+                <span className="bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" /> Resolved & Confirmed
                 </span>
               ) : isOverdue ? (
-                <span className="bg-rose-100 text-rose-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" /> SLA Overdue (Escalated)
+                <span className="bg-amber-950 text-amber-300 border border-amber-600 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Overdue
                 </span>
               ) : (
-                <span className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full capitalize">
+                <span className="bg-cyan-950 text-cyan-300 border border-cyan-700 text-xs font-bold px-3 py-1 rounded-full capitalize">
                   {issue.status.replace('_', ' ')}
                 </span>
               )}
 
-              {/* AI Analysis Status / Severity Badge */}
               {issue.ai_severity !== undefined ? (
-                <span className={`text-xs font-bold px-3 py-1 rounded-full border flex items-center space-x-1 ${getSeverityBadgeClass(issue.ai_severity)}`}>
+                <span className={`text-xs font-mono-data font-bold px-3 py-1 rounded-full border flex items-center space-x-1 ${getSeverityBadgeClass(issue.ai_severity)}`}>
                   <ShieldAlert className="w-3.5 h-3.5" />
                   <span>Severity: {issue.ai_severity}/100</span>
                 </span>
               ) : issue.ai_analysis_status === 'analyzing' ? (
-                <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center space-x-1 animate-pulse">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                  <span>AI Inference Running in Background...</span>
+                <span className="text-xs font-semibold text-cyan-300 bg-cyan-950 border border-cyan-700 px-3 py-1 rounded-full flex items-center space-x-1">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                  <span>YOLOv8 Inference Running...</span>
                 </span>
               ) : (
-                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-mono-data font-bold text-emerald-400 bg-emerald-950 border border-emerald-700/80 px-2.5 py-0.5 rounded-full">
                   {(issue.ai_confidence * 100).toFixed(1)}% AI Confirmed
                 </span>
               )}
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">{issue.title}</h1>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">{issue.description}</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight tracking-tight">{issue.title}</h1>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl font-medium">{issue.description}</p>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
-              <span className="flex items-center space-x-1 font-medium text-slate-700">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-400 pt-1">
+              <span className="flex items-center space-x-1.5 font-semibold text-amber-400">
+                <MapPin className="w-3.5 h-3.5 text-amber-400" />
                 <span>{issue.zone_name}</span>
               </span>
-              <span className="flex items-center space-x-1 font-medium text-slate-700">
+              <span className="flex items-center space-x-1.5 font-semibold text-cyan-400">
                 <Building2 className="w-3.5 h-3.5 text-slate-400" />
                 <span>{issue.department}</span>
               </span>
               <span>•</span>
-              <span>Reported: {new Date(issue.reported_at).toLocaleDateString()}</span>
+              <span className="font-mono-data text-slate-400">Logged: {new Date(issue.reported_at).toLocaleDateString()}</span>
             </div>
           </div>
 
-          {/* SLA Countdown Card */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:w-56 shrink-0 space-y-1 text-center sm:text-left">
-            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-              Resolution Target
+          <div className="bg-slate-950 border border-slate-800 p-5 rounded-2xl sm:w-64 shrink-0 space-y-3 text-center">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+              SLA Compliance Countdown
             </span>
-            <div className="text-2xl font-extrabold text-slate-900">
-              {isResolved ? (
-                <span className="text-emerald-600">Closed Fixed</span>
-              ) : isOverdue ? (
-                <span className="text-rose-600">{Math.abs(diffDays)} Days Overdue</span>
-              ) : (
-                <span>{diffDays} Days Left</span>
-              )}
+
+            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-slate-900"
+                  strokeWidth="3"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className={isOverdue ? 'text-amber-400' : isResolved ? 'text-emerald-400' : 'text-cyan-400'}
+                  strokeDasharray={`${Math.max(0, Math.min(100, (diffDays / 15) * 100))}, 100`}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <div className="absolute text-center">
+                <span className="text-xl font-extrabold text-white block leading-none font-mono-data">
+                  {isResolved ? 'FIXED' : isOverdue ? `${Math.abs(diffDays)}d` : `${diffDays}d`}
+                </span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase block mt-0.5">
+                  {isResolved ? 'CLOSED' : isOverdue ? 'OVERDUE' : 'REMAINING'}
+                </span>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Deadline: {deadlineDate.toLocaleDateString()}
-            </p>
-            {issue.upvote_count >= 500 && (
-              <span className="text-[10px] font-bold text-purple-700 block">
-                ⚡ Compressed 5-day SLA active
-              </span>
-            )}
+
+            <div className="text-[11px] text-slate-400 font-mono-data">
+              Target SLA: {deadlineDate.toLocaleDateString()}
+            </div>
           </div>
         </div>
 
-        {/* Community Evidence Gallery if additional photos exist */}
-        {issue.additional_photos && issue.additional_photos.length > 0 && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
-            <span className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
-              <ImageIcon className="w-4 h-4 text-emerald-600" />
-              <span>Community Photo Evidence ({issue.additional_photos.length} Photo{issue.additional_photos.length > 1 ? 's' : ''})</span>
-            </span>
-            <div className="flex flex-wrap gap-2.5 pt-1">
-              {issue.additional_photos.map((photo, idx) => (
-                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 shadow-2xs group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photo} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                  <span className="absolute bottom-1 right-1 bg-slate-900/80 text-white font-mono text-[9px] px-1 rounded">
-                    #{idx + 1}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Action Bar (Upvote, Verify, Evidence, Escalation) */}
-        <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={handleUpvoteClick}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all ${
-              issue.has_upvoted
-                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 ring-2 ring-emerald-400/30'
-                : 'bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 border border-slate-200'
-            }`}
-          >
-            <ThumbsUp className={`w-4 h-4 ${issue.has_upvoted ? 'text-emerald-600 fill-emerald-600' : 'text-slate-500'}`} />
-            <span>Upvote Urgent ({issue.upvote_count})</span>
-          </button>
-
-          {/* Citizen Verification Trigger */}
-          <button
-            type="button"
-            onClick={() => setIsVerifyModalOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-bold rounded-xl transition-colors flex items-center space-x-2 shadow-2xs"
-          >
-            <CheckSquare className="w-4 h-4 text-emerald-600" />
-            <span>Citizen Verify (Yes/No)</span>
-          </button>
-
-          {/* Resolution Evidence Viewer */}
-          <button
-            type="button"
-            onClick={() => setIsEvidenceModalOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 text-xs font-bold rounded-xl transition-colors flex items-center space-x-2 shadow-2xs"
-          >
-            <Eye className="w-4 h-4 text-teal-600" />
-            <span>Resolution Evidence</span>
-          </button>
-
-          {/* Overdue Escalation Graphic Mockup */}
-          {issue.escalated && (
+        {/* Action Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center space-x-3">
             <button
-              type="button"
-              onClick={() => setIsEscalationModalOpen(true)}
-              className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 text-xs font-bold rounded-xl transition-colors flex items-center space-x-2 shadow-2xs"
+              onClick={handleUpvoteClick}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
             >
-              <AlertTriangle className="w-4 h-4 text-rose-600" />
-              <span>View Escalation Notice</span>
+              <ThumbsUp className="w-4 h-4 text-slate-950" />
+              <span>Upvote Defect Ticket ({issue.upvote_count})</span>
             </button>
-          )}
+
+            {!isResolved && (
+              <button
+                onClick={() => setIsEvidenceModalOpen(true)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 font-semibold text-xs rounded-xl transition-colors flex items-center space-x-1.5"
+              >
+                <Wrench className="w-4 h-4 text-amber-400" />
+                <span>Upload Resolution Evidence</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsVerifyModalOpen(true)}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Citizen Verification Guardrail</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Grid: Timeline & Official PDF Receipt */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono">
         <StatusTimeline
           currentStatus={issue.status}
           history={history}
@@ -331,7 +309,7 @@ export default function TrackComplaintPage() {
         issue={issue}
         isOpen={isVerifyModalOpen}
         onClose={() => setIsVerifyModalOpen(false)}
-        onVerified={loadTicketData}
+        onVerified={loadData}
       />
 
       <EvidenceModal
@@ -339,7 +317,7 @@ export default function TrackComplaintPage() {
         existingEvidence={evidence || undefined}
         isOpen={isEvidenceModalOpen}
         onClose={() => setIsEvidenceModalOpen(false)}
-        onSubmitted={loadTicketData}
+        onSubmitted={loadData}
       />
 
       <EscalationGraphicModal

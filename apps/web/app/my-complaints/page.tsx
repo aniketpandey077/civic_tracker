@@ -27,6 +27,7 @@ import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
 import EvidenceModal from '@/components/EvidenceModal';
 
 export default function MyComplaintsPage() {
+  const [mounted, setMounted] = useState(false);
   const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -39,6 +40,7 @@ export default function MyComplaintsPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     loadIssues();
 
     const handleStoreUpdate = () => {
@@ -55,6 +57,8 @@ export default function MyComplaintsPage() {
       }
     };
   }, []);
+
+  if (!mounted) return null;
 
   const handleUpvote = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -90,54 +94,54 @@ export default function MyComplaintsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
-              <FileText className="w-5 h-5" />
+            <span className="p-2 rounded-xl bg-[#D95F02]/10 text-[#D95F02] border border-[#D95F02]/30">
+              <FileText className="w-5 h-5 text-[#D95F02]" />
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Civic Complaints Repository
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E2328] tracking-tight">
+              Municipal Defect Docket Ledger
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Ordered from <strong className="text-emerald-700">nearest to farthest</strong> relative to your GPS coordinates ({userLocation.city}).
+          <p className="text-xs text-[#6B6860] font-medium mt-1">
+            Official civic grievances ordered from <strong className="text-[#D95F02] font-semibold">nearest to farthest</strong> relative to GPS fix ({userLocation.city}).
           </p>
         </div>
 
-        {/* Large Prominent New Complaint Button */}
+        {/* New Complaint Action Button */}
         <Link
           href="/report"
-          className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-extrabold rounded-2xl shadow-lg shadow-emerald-950/20 hover:shadow-emerald-600/30 hover:scale-105 active:scale-95 transition-all flex items-center space-x-2 self-start sm:self-auto ring-2 ring-emerald-400/20"
+          className="px-5 py-2.5 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 text-xs font-extrabold rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center space-x-2 self-start sm:self-auto"
         >
-          <Camera className="w-4 h-4" />
-          <span>+ File New Complaint</span>
+          <Camera className="w-4 h-4 text-slate-950" />
+          <span>+ File Defect Docket</span>
         </Link>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center gap-3">
+      <div className="glass-card p-4 rounded-2xl border border-[#C9C4BA] shadow-lg flex flex-col sm:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-[#6B6860] absolute left-3.5 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by ticket # (CTR-2026...), title, category, or ward..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-600 focus:bg-white"
+            className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-medium text-[#1E2328] placeholder-slate-500"
           />
         </div>
 
         <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+          <Filter className="w-4 h-4 text-[#6B6860] shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-600 font-medium text-slate-700 w-full sm:w-auto"
+            className="px-3.5 py-2 text-xs bg-white border border-[#C9C4BA] rounded-xl outline-none focus:border-[#D95F02] font-semibold text-[#2D3340] w-full sm:w-auto"
           >
             <option value="all">All Statuses ({rawIssues.length})</option>
-            <option value="pending">Pending</option>
-            <option value="verified">Verified</option>
-            <option value="assigned">Assigned</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
+            <option value="pending">Pending Inspection</option>
+            <option value="verified">Verified Field</option>
+            <option value="assigned">Assigned Contractor</option>
+            <option value="in_progress">Awaiting Citizen Vote</option>
+            <option value="resolved">Resolved & Confirmed</option>
           </select>
         </div>
       </div>
@@ -150,64 +154,66 @@ export default function MyComplaintsPage() {
           const diffDays = Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
           const isOverdue = !isResolved && diffDays <= 0;
 
-          return (
+          const statusDisplayLabel = 
+            issue.status === 'resolved' ? 'Resolved & Verified' :
+            issue.status === 'in_progress' ? 'Awaiting Citizen Vote' :
+            issue.status === 'assigned' ? 'Assigned Contractor' :
+            issue.status === 'verified' ? 'Verified Field' : 'Pending Inspection';
+
+          if (!mounted) return null;
+
+    return (
             <div
               key={issue.id}
-              className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4 relative"
+              className="glass-card glass-card-hover rounded-2xl p-5 border border-[#C9C4BA] flex flex-col justify-between space-y-4"
             >
               <div className="space-y-3">
                 {/* Header Badge Row */}
                 <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono-data font-bold text-[#2D3340] bg-[#E8E5DF] border border-[#C9C4BA] px-2 py-0.5 rounded-lg">
                     {issue.complaint_number}
                   </span>
 
                   <div className="flex items-center space-x-1">
                     {/* Proximity Distance Badge */}
-                    <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center space-x-1">
-                      <Navigation className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span className="bg-[#E8E5DF] text-[#D95F02] border border-[#D95F02]/40 text-[10px] font-mono-data font-bold px-2 py-0.5 rounded-full flex items-center space-x-1">
+                      <Navigation className="w-3 h-3 text-[#D95F02] shrink-0" />
                       <span>{issue.distanceFormatted}</span>
                     </span>
 
-                    {/* AI Analysis Status / Severity Badge */}
-                    {issue.ai_analysis_status === 'analyzing' ? (
-                      <span className="bg-purple-100 text-purple-900 border border-purple-300 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center space-x-1 animate-pulse">
-                        <Sparkles className="w-3 h-3 text-purple-600 shrink-0" />
-                        <span>AI Analyzing...</span>
-                      </span>
-                    ) : issue.ai_severity !== undefined ? (
+                    {/* AI Severity Badge */}
+                    {issue.ai_severity !== undefined && (
                       <span
-                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
+                        className={`text-[9px] font-mono-data font-bold px-2 py-0.5 rounded-full border ${
                           issue.ai_severity < 30
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            ? 'bg-[#EDFBF0] text-[#176B3A] border-[#176B3A]'
                             : issue.ai_severity <= 60
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
-                            : 'bg-rose-100 text-rose-800 border-rose-300'
+                            ? 'bg-[#EEF4FF] text-[#1A56A4] border-cyan-800'
+                            : 'bg-amber-950 text-amber-300 border-amber-800'
                         }`}
                       >
-                        Sev: {issue.ai_severity}/100 {issue.ai_count !== undefined ? `(${issue.ai_count} def)` : ''}
+                        Sev: {issue.ai_severity}/100
                       </span>
-                    ) : null}
+                    )}
 
                     {/* 45-Day Escalated Badge */}
                     {issue.escalation_email_sent_at && (
-                      <span className="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center space-x-1">
-                        <ShieldAlert className="w-3 h-3 text-rose-600" />
-                        <span>45d Escalated</span>
+                      <span className="bg-[#FEF2F2] text-[#B91C1C] border border-[#B91C1C] text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                        45d Escalated
                       </span>
                     )}
 
                     {isResolved ? (
-                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="bg-[#EDFBF0] text-[#176B3A] border border-[#176B3A] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" /> Resolved
                       </span>
                     ) : isOverdue ? (
-                      <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Overdue
+                      <span className="bg-amber-950 text-amber-300 border border-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 text-[#D95F02]" /> Overdue
                       </span>
                     ) : (
-                      <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
-                        {issue.status.replace('_', ' ')}
+                      <span className="bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {statusDisplayLabel}
                       </span>
                     )}
                   </div>
@@ -215,55 +221,69 @@ export default function MyComplaintsPage() {
 
                 {/* Photo Thumbnail + Info */}
                 <div className="flex space-x-3">
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                  <div className="w-20 h-20 bg-[#E8E5DF] shrink-0 border border-[#C9C4BA] rounded-xl overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={issue.photo_url}
                       alt={issue.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
                     <Link href={`/track/${issue.complaint_number}`}>
-                      <h3 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug hover:text-emerald-700 transition-colors">
+                      <h3 className="text-xs font-extrabold text-[#1E2328] line-clamp-2 leading-snug hover:text-[#D95F02] transition-colors">
                         {issue.title}
                       </h3>
                     </Link>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{issue.description}</p>
-                    <div className="text-[10px] text-slate-400 flex items-center space-x-1">
-                      <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <p className="text-[11px] text-[#6B6860] line-clamp-1">{issue.description}</p>
+                    <div className="text-[10px] text-[#6B6860] font-medium flex items-center space-x-1">
+                      <MapPin className="w-3 h-3 text-[#D95F02] shrink-0" />
                       <span className="truncate">{issue.zone_name}</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* SLA Countdown Bar */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] text-[#6B6860] font-medium">
+                    <span>SLA Countdown: <strong className="font-mono-data text-[#D95F02]">{diffDays > 0 ? `${diffDays} days left` : 'Expired'}</strong></span>
+                    <span>{issue.upvote_count >= 500 ? '5-Day Emergency' : '15-Day Target'}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-[#E8E5DF] rounded-full overflow-hidden border border-[#C9C4BA]">
+                    <div
+                      className={`h-full ${isOverdue ? 'bg-[#D95F02]' : isResolved ? 'bg-[#176B3A]' : 'bg-cyan-500'}`}
+                      style={{ width: `${Math.max(0, Math.min(100, (diffDays / 15) * 100))}%` }}
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Card Footer: SLA, Fix Defect & Upvote */}
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="pt-3 border-t border-[#C9C4BA] flex items-center justify-between gap-2 text-xs">
                 <button
                   type="button"
                   onClick={() => setSelectedIssueForEvidence(issue)}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+                  className="px-3 py-1.5 bg-[#D95F02] hover:bg-[#D95F02] text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
                 >
-                  <Wrench className="w-3.5 h-3.5" />
-                  <span>🛠️ Fix Defect</span>
+                  <Wrench className="w-3.5 h-3.5 text-slate-950" />
+                  <span>Resolve Defect</span>
                 </button>
 
                 <div className="flex items-center space-x-2">
                   <button
                     type="button"
                     onClick={(e) => handleUpvote(issue.id, e)}
-                    className="flex items-center space-x-1 text-slate-600 hover:text-emerald-600 bg-slate-50 hover:bg-emerald-50 px-2 py-1 rounded border border-slate-200 transition-colors"
+                    className="flex items-center space-x-1 text-[#4B5563] hover:text-[#D95F02] bg-[#E8E5DF] hover:bg-[#C9C4BA] px-2 py-1 rounded-lg border border-[#C9C4BA] transition-colors"
                   >
-                    <ThumbsUp className="w-3 h-3" />
-                    <span className="font-bold text-[11px]">{issue.upvote_count}</span>
+                    <ThumbsUp className="w-3 h-3 text-[#D95F02]" />
+                    <span className="font-mono-data font-bold text-[11px]">{issue.upvote_count}</span>
                   </button>
 
                   <Link
                     href={`/track/${issue.complaint_number}`}
-                    className="text-emerald-600 font-bold text-xs flex items-center hover:underline"
+                    className="text-[#1A56A4] hover:text-[#1A56A4] font-bold text-xs flex items-center"
                   >
-                    Track <ArrowRight className="w-3 h-3 ml-0.5" />
+                    Docket <ArrowRight className="w-3 h-3 ml-0.5" />
                   </Link>
                 </div>
               </div>
