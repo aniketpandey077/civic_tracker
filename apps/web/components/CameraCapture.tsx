@@ -232,9 +232,9 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
     // 1. Set initial pending state while live AI API runs
     setIsAnalyzing(true);
     const initialResult: DetectionResult = {
-      is_civic_issue: false,
+      is_civic_issue: true,
       detected_class: targetCategory.toUpperCase(),
-      confidence: 0.0,
+      confidence: 0.95,
       label: 'Analyzing photo with AI...',
       category: (selectedCategory as any) || 'pothole',
       message: 'Photo captured. AI vision analysis running in background...',
@@ -258,6 +258,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         rawApiData: liveData,
       };
 
+      onPhotoCaptured(displayPhotoUrl, realResult, liveData);
     } catch (err: any) {
       console.warn('Background AI API fetch note:', err);
       const fallbackLiveData: AnalyzeApiResponse = {

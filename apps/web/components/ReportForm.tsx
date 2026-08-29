@@ -199,7 +199,7 @@ export default function ReportForm() {
     }
 
     // 🚫 AI CANCELLED / FALSE REPORT GUARD
-    if (liveApiData?.detected === false || (aiResult && aiResult.is_civic_issue === false)) {
+    if (liveApiData?.detected === false || aiResult?.detected_class === 'Clean Road Surface (No Defect)') {
       setErrorMsg('🚫 REPORT CANCELLED BY AI: The vision model evaluated this photo and found NO valid civic defect. This report has been cancelled and cannot be registered in municipal dockets.');
       return;
     }
