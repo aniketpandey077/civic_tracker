@@ -72,9 +72,9 @@ export default function MapView({
       // Check if user location cached
       const cachedLat = localStorage.getItem('civic_user_lat');
       const cachedLng = localStorage.getItem('civic_user_lng');
-      const initialLat = cachedLat ? parseFloat(cachedLat) : 26.885;
-      const initialLng = cachedLng ? parseFloat(cachedLng) : 75.795;
-      const initialZoom = cachedLat ? 14 : 12;
+      const initialLat = cachedLat ? parseFloat(cachedLat) : 30.900;  // Ludhiana, Punjab
+      const initialLng = cachedLng ? parseFloat(cachedLng) : 75.857;
+      const initialZoom = cachedLat ? 14 : 11;
 
       const map = L.map(mapContainerRef.current).setView([initialLat, initialLng], initialZoom);
       mapInstanceRef.current = map;
@@ -84,32 +84,36 @@ export default function MapView({
         maxZoom: 18,
       }).addTo(map);
 
-      // Ward Polygon Overlays
+      // Punjab Municipal Ward Polygon Overlays
       const wardPolygons = [
-        {
-          name: 'Ward 12 (Civil Lines)',
-          dept: 'PWD',
-          color: '#3b82f6',
-          coords: [[26.898, 75.775], [26.898, 75.800], [26.915, 75.800], [26.915, 75.775]]
-        },
-        {
-          name: 'Ward 15 (Malviya Nagar)',
-          dept: 'SWM',
-          color: '#10b981',
-          coords: [[26.840, 75.810], [26.840, 75.838], [26.865, 75.838], [26.865, 75.810]]
-        },
-        {
-          name: 'Ward 22 (Mansarovar)',
-          dept: 'JVVNL',
-          color: '#f59e0b',
-          coords: [[26.850, 75.750], [26.850, 75.785], [26.878, 75.785], [26.878, 75.750]]
-        },
-        {
-          name: 'Ward 30 (Sanganer)',
-          dept: 'Drainage',
-          color: '#8b5cf6',
-          coords: [[26.800, 75.760], [26.800, 75.795], [26.835, 75.795], [26.835, 75.760]]
-        }
+        // Ludhiana
+        { name: 'Ward 18 (Model Town, Ludhiana)', dept: 'PWD', city: 'Ludhiana', color: '#3b82f6',
+          coords: [[30.910, 75.820], [30.910, 75.855], [30.935, 75.855], [30.935, 75.820]] },
+        { name: 'Ward 32 (Sahnewal, Ludhiana)', dept: 'SWM', city: 'Ludhiana', color: '#06b6d4',
+          coords: [[30.870, 75.870], [30.870, 75.905], [30.900, 75.905], [30.900, 75.870]] },
+        { name: 'Ward 9 (Civil Lines, Ludhiana)', dept: 'Roads', city: 'Ludhiana', color: '#0ea5e9',
+          coords: [[30.895, 75.840], [30.895, 75.870], [30.920, 75.870], [30.920, 75.840]] },
+        { name: 'Ward 45 (Dugri, Ludhiana)', dept: 'PHE', city: 'Ludhiana', color: '#38bdf8',
+          coords: [[30.865, 75.800], [30.865, 75.830], [30.895, 75.830], [30.895, 75.800]] },
+        // Amritsar
+        { name: 'Ward 7 (Golden Avenue, Amritsar)', dept: 'PWD', city: 'Amritsar', color: '#f59e0b',
+          coords: [[31.610, 74.820], [31.610, 74.860], [31.640, 74.860], [31.640, 74.820]] },
+        { name: 'Ward 14 (Old City Heritage, Amritsar)', dept: 'Roads', city: 'Amritsar', color: '#fb923c',
+          coords: [[31.618, 74.870], [31.618, 74.895], [31.638, 74.895], [31.638, 74.870]] },
+        // Chandigarh
+        { name: 'Sector 17 (City Centre, Chandigarh)', dept: 'Roads', city: 'Chandigarh', color: '#10b981',
+          coords: [[30.730, 76.770], [30.730, 76.800], [30.755, 76.800], [30.755, 76.770]] },
+        { name: 'Sector 22 (Industrial, Chandigarh)', dept: 'SWM', city: 'Chandigarh', color: '#34d399',
+          coords: [[30.730, 76.800], [30.730, 76.830], [30.756, 76.830], [30.756, 76.800]] },
+        // Patiala
+        { name: 'Ward 8 (Urban Estate, Patiala)', dept: 'PWD', city: 'Patiala', color: '#8b5cf6',
+          coords: [[30.320, 76.370], [30.320, 76.410], [30.348, 76.410], [30.348, 76.370]] },
+        // Jalandhar
+        { name: 'Ward 11 (Model Town, Jalandhar)', dept: 'PWD', city: 'Jalandhar', color: '#ec4899',
+          coords: [[31.305, 75.550], [31.305, 75.580], [31.330, 75.580], [31.330, 75.550]] },
+        // Mohali
+        { name: 'Phase 7 (IT City, Mohali)', dept: 'GMADA', city: 'Mohali', color: '#f43f5e',
+          coords: [[30.700, 76.720], [30.700, 76.760], [30.730, 76.760], [30.730, 76.720]] },
       ];
 
       wardPolygons.forEach(w => {
@@ -120,7 +124,7 @@ export default function MapView({
           fillColor: w.color,
           fillOpacity: 0.1,
           dashArray: '5, 5'
-        }).bindPopup(`<b>${w.name}</b><br/>Department: ${w.dept}`).addTo(map);
+        }).bindPopup(`<b>${w.name}</b><br/>City: ${w.city}<br/>Department: ${w.dept}`).addTo(map);
       });
 
       renderMarkers(L, map);

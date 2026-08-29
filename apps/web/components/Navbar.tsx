@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -13,15 +13,22 @@ import {
   X,
   Camera,
   Radio,
-  AlertTriangle
+  AlertTriangle,
+  LogIn,
+  LogOut,
+  User
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useUserLocation } from '@/lib/useUserLocation';
+import { useAuth } from '@/lib/authContext';
+import LoginModal from './LoginModal';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const userLocation = useUserLocation();
+  const { user, signOut } = useAuth();
 
   const navLinks = [
     { href: '/map', label: 'GIS Map', icon: Map },
@@ -107,6 +114,31 @@ export default function Navbar() {
 
             <NotificationBell />
 
+            {/* Auth Button — desktop */}
+            {user ? (
+              <div className="hidden md:flex items-center space-x-2">
+                <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#EDFBF0] border border-emerald-400/40 rounded-lg text-xs text-[#176B3A] font-semibold">
+                  <User className="w-3.5 h-3.5" />
+                  <span className="max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="p-2 text-[#6B6860] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setLoginOpen(true)}
+                className="hidden md:flex items-center space-x-1.5 px-3.5 py-2 bg-[#1A56A4] hover:bg-[#134688] text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Citizen Login</span>
+              </button>
+            )}
+
             <div className="md:hidden">
               <button
                 type="button"
@@ -159,8 +191,29 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {/* Login/Logout in mobile drawer */}
+          {user ? (
+            <button
+              onClick={() => { signOut(); setMobileMenuOpen(false); }}
+              className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out ({user.email?.split('@')[0]})</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => { setLoginOpen(true); setMobileMenuOpen(false); }}
+              className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-[#1A56A4] hover:bg-[#EEF4FF] transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Citizen Login</span>
+            </button>
+          )}
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </header>
   );
 }
