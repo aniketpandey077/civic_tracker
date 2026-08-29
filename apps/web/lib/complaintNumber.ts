@@ -1,13 +1,11 @@
 // Generates unique, official-formatted complaint numbers
-// Format: CTR-{YEAR}-{CITY_CODE}-{ZERO_PADDED_SEQUENCE}
-// Example: CTR-2026-JPR-000184
-
-let counter = 184;
+// Format: CTR-{YEAR}-{CITY_CODE}-{RANDOM_6_DIGIT_SEQUENCE}
+// Example: CTR-2026-PHA-849102
 
 export function generateComplaintNumber(cityCode: string = 'JPR', year: number = 2026): string {
-  counter += 1;
-  const padded = String(counter).padStart(6, '0');
-  return `CTR-${year}-${cityCode.toUpperCase()}-${padded}`;
+  const cleanCity = cityCode ? cityCode.replace(/[^a-zA-Z]/g, '').slice(0, 3).toUpperCase() : 'JPR';
+  const sequence = Math.floor(100000 + Math.random() * 900000);
+  return `CTR-${year}-${cleanCity || 'JPR'}-${sequence}`;
 }
 
 export function parseComplaintNumber(complaintNumber: string): {
