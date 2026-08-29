@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mail, KeyRound, LogIn, Loader2, CheckCircle, X, Shield, Lock, UserCheck, Sparkles, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle, X, Shield, Lock, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../lib/authContext';
 
 interface LoginModalProps {
@@ -9,426 +9,148 @@ interface LoginModalProps {
   onClose: () => void;
 }
 
-type AuthMode = 'otp' | 'password' | 'signup';
-type Step = 'input' | 'otp_verify' | 'success';
-
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { signInWithEmail, signInWithGoogle, signInWithPassword, signUpWithPassword, signInAsDemo, verifyOtp } = useAuth();
-
-  const [authMode, setAuthMode] = useState<AuthMode>('otp');
-  const [step, setStep] = useState<Step>('input');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { signInWithGoogle } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   if (!isOpen) return null;
 
-  // Google OAuth Login
-  const handleGoogleLogin = async () => {
-    setError(null);
-    setGoogleLoading(true);
-    const { error: err } = await signInWithGoogle();
-    setGoogleLoading(false);
-    if (err) {
-      setError(err);
-    } else {
-      setStep('success');
-      setTimeout(() => {
-        onClose();
-        resetState();
-      }, 1500);
-    }
-  };
-
-  // Demo Quick-Login (Instant 1-Click Citizen / Admin)
-  const handleDemoLogin = async (role: 'citizen' | 'admin') => {
-    setError(null);
-    setLoading(true);
-    await signInAsDemo(role);
-    setLoading(false);
-    setStep('success');
-    setTimeout(() => {
-      onClose();
-      resetState();
-    }, 1200);
-  };
-
-  // Send Email OTP Code
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setError(null);
-    setLoading(true);
-
-    const { error: err } = await signInWithEmail(email.trim().toLowerCase());
-    setLoading(false);
-
-    if (err) {
-      setError(err);
-    } else {
-      setStep('otp_verify');
-    }
-  };
-
-  // Password Login or Sign Up
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
-    setError(null);
-    setLoading(true);
-
-    let res;
-    if (authMode === 'signup') {
-      res = await signUpWithPassword(email.trim().toLowerCase(), password);
-    } else {
-      res = await signInWithPassword(email.trim().toLowerCase(), password);
-    }
-    setLoading(false);
-
-    if (res.error) {
-      setError(res.error);
-    } else {
-      setStep('success');
-      setTimeout(() => {
-        onClose();
-        resetState();
-      }, 1500);
-    }
-  };
-
-  // Verify 6-digit OTP
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp.trim()) return;
-    setError(null);
-    setLoading(true);
-
-    const { error: err } = await verifyOtp(email, otp.trim());
-    setLoading(false);
-
-    if (err) {
-      setError(err || 'Invalid or expired code. Please try again.');
-    } else {
-      setStep('success');
-      setTimeout(() => {
-        onClose();
-        resetState();
-      }, 1500);
-    }
-  };
-
   const resetState = () => {
-    setStep('input');
-    setEmail('');
-    setPassword('');
-    setOtp('');
     setError(null);
-    setAuthMode('otp');
+    setGoogleLoading(false);
+    setIsSuccess(false);
   };
 
   const handleClose = () => {
+    resetState();
     onClose();
-    setTimeout(resetState, 300);
+  };
+
+  // Google 1-Click Sign-In
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    const { error: err, user } = await signInWithGoogle();
+    setGoogleLoading(false);
+
+    if (err) {
+      setError(err);
+    } else {
+      setIsSuccess(true);
+      setTimeout(() => {
+        handleClose();
+      }, 1300);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
         onClick={handleClose}
       />
 
-      {/* Modal Card */}
-      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      {/* Modal Dialog */}
+      <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden animate-in zoom-in-95 duration-200">
+        
+        {/* Top Header Glow Bar */}
+        <div className="h-2 bg-gradient-to-r from-[#1A56A4] via-[#176B3A] to-amber-500" />
 
-        {/* Header */}
-        <div className="bg-gradient-to-br from-[#1A56A4] to-[#176B3A] p-6 text-white relative">
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-white/20 rounded-xl">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-lg font-extrabold tracking-tight">Citizen Authentication</h2>
-              <p className="text-xs text-white/80 mt-0.5">CivicTrack — Punjab Municipal System</p>
-            </div>
-          </div>
-        </div>
+        <div className="p-8 sm:p-10 space-y-6">
 
-        <div className="p-6 space-y-4">
-
-          {/* STEP 1: Main Login Form */}
-          {step === 'input' && (
-            <div className="space-y-4">
-
-              {/* Mode Toggle Tabs */}
-              <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('otp'); setError(null); }}
-                  className={`flex-1 py-1.5 rounded-lg transition-all ${
-                    authMode === 'otp' ? 'bg-white text-[#1A56A4] shadow-xs' : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  Email OTP Code
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('password'); setError(null); }}
-                  className={`flex-1 py-1.5 rounded-lg transition-all ${
-                    authMode === 'password' || authMode === 'signup'
-                      ? 'bg-white text-[#1A56A4] shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900'
-                  }`}
-                >
-                  Password
-                </button>
+          {/* SUCCESS SCREEN */}
+          {isSuccess ? (
+            <div className="py-8 text-center space-y-4 animate-in zoom-in-95 duration-300">
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle className="w-9 h-9 animate-bounce" />
               </div>
-
-              {/* Quick Demo Access Bar */}
-              <div className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200/60 p-3 rounded-2xl space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-emerald-600" />
-                    Instant Citizen Access
-                  </span>
-                  <span className="text-[9px] text-slate-400 font-mono">Role: Supabase DB</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('citizen')}
-                  disabled={loading}
-                  className="w-full flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-white hover:bg-slate-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 shadow-2xs transition-all active:scale-95"
-                >
-                  <UserCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Enter as Citizen (One-Click)</span>
-                </button>
-              </div>
-
-              {/* OPTION A: Email OTP Form */}
-              {authMode === 'otp' && (
-                <form onSubmit={handleSendOtp} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Your Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="citizen@punjab.gov.in"
-                        required
-                        className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] focus:ring-2 focus:ring-[#1A56A4]/20 bg-slate-50"
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <p className="text-xs text-rose-500 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                      {error}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading || !email}
-                    className="w-full flex items-center justify-center space-x-2 bg-[#1A56A4] hover:bg-[#134688] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
-                    <span>{loading ? 'Sending code...' : 'Send 6-Digit Login Code'}</span>
-                  </button>
-                </form>
-              )}
-
-              {/* OPTION B: Password Form */}
-              {(authMode === 'password' || authMode === 'signup') && (
-                <form onSubmit={handlePasswordSubmit} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        required
-                        className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] bg-slate-50"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        required
-                        minLength={6}
-                        className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] bg-slate-50"
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <p className="text-xs text-rose-500 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                      {error}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={loading || !email || !password}
-                    className="w-full flex items-center justify-center space-x-2 bg-[#176B3A] hover:bg-[#145730] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                    <span>{loading ? 'Processing...' : authMode === 'signup' ? 'Create Account' : 'Sign In'}</span>
-                  </button>
-
-                  <div className="text-center pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAuthMode(authMode === 'signup' ? 'password' : 'signup');
-                        setError(null);
-                      }}
-                      className="text-[11px] text-[#1A56A4] font-semibold hover:underline"
-                    >
-                      {authMode === 'signup' ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              {/* Divider */}
-              <div className="flex items-center space-x-3 text-slate-400">
-                <div className="flex-1 h-px bg-slate-200" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or continue with</span>
-                <div className="flex-1 h-px bg-slate-200" />
-              </div>
-
-              {/* Google OAuth Button */}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={googleLoading || loading}
-                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2 px-4 rounded-xl border border-slate-200 shadow-2xs transition-all active:scale-95 disabled:opacity-50"
-              >
-                {googleLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-[#1A56A4]" />
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                )}
-                <span className="text-xs">
-                  {googleLoading ? 'Connecting to Google...' : 'Google Account'}
-                </span>
-              </button>
-
-            </div>
-          )}
-
-          {/* STEP 2: OTP Verification Code */}
-          {step === 'otp_verify' && (
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-2.5 text-xs text-blue-800">
-                📧 6-digit code sent to <strong>{email}</strong>. Check your inbox & spam folder.
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Enter 6-Digit Code
-                </label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="123456"
-                    required
-                    autoFocus
-                    maxLength={6}
-                    inputMode="numeric"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm font-mono tracking-[0.3em] border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] focus:ring-2 focus:ring-[#1A56A4]/20 bg-slate-50 text-center font-bold"
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <p className="text-xs text-rose-500 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                  {error}
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-slate-900">Signed In Successfully</h3>
+                <p className="text-xs text-slate-500">
+                  Welcome to CivicTrack Municipal Portal
                 </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading || otp.length < 6}
-                className="w-full flex items-center justify-center space-x-2 bg-[#176B3A] hover:bg-[#145730] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                <span>{loading ? 'Verifying...' : 'Verify & Sign In'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => { setStep('input'); setError(null); setOtp(''); }}
-                className="w-full text-center text-xs text-slate-500 hover:text-slate-800 underline underline-offset-2"
-              >
-                ← Back / Use another method
-              </button>
-            </form>
-          )}
-
-          {/* STEP 3: Success Confirmation */}
-          {step === 'success' && (
-            <div className="text-center py-5 space-y-3">
-              <div className="flex justify-center">
-                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
-                  <CheckCircle className="w-8 h-8 text-emerald-600" />
-                </div>
-              </div>
-              <div>
-                <h3 className="font-black text-slate-900 text-lg">Authenticated!</h3>
-                <p className="text-xs text-slate-500 mt-1">Logged into CivicTrack Punjab System 🌾</p>
               </div>
             </div>
+          ) : (
+            <>
+              {/* BRAND HEADER */}
+              <div className="text-center space-y-3">
+                <div className="w-14 h-14 bg-gradient-to-tr from-[#1A56A4] to-[#176B3A] rounded-2xl flex items-center justify-center mx-auto shadow-lg text-white">
+                  <Shield className="w-7 h-7" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                    Sign in to CivicTrack
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Punjab Municipal Infrastructure Grievance & Accountability System
+                  </p>
+                </div>
+              </div>
+
+              {/* ERROR NOTICE */}
+              {error && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs flex items-center space-x-2 animate-in fade-in">
+                  <Lock className="w-4 h-4 shrink-0 text-rose-500" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* GOOGLE SIGN IN BUTTON (ONLY OPTION) */}
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={googleLoading}
+                  className="w-full flex items-center justify-center space-x-3 py-4 px-6 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border-2 border-slate-200 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed group cursor-pointer"
+                >
+                  {googleLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-[#1A56A4]" />
+                  ) : (
+                    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                  )}
+                  <span className="text-slate-800 font-extrabold">
+                    {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
+                  </span>
+                </button>
+              </div>
+
+              {/* SECURITY BADGE */}
+              <div className="pt-2 text-center">
+                <div className="inline-flex items-center space-x-1.5 text-[11px] text-slate-400 font-medium">
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Secure 256-bit encrypted authentication</span>
+                </div>
+              </div>
+            </>
           )}
 
         </div>
