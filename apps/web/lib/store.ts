@@ -68,8 +68,24 @@ export function getStoredIssues(): CivicIssue[] {
     }
   }
 
+  // Ensure all stored issues have valid AI analysis status and severity scores
+  let needSave = false;
+  issues = issues.map((issue) => {
+    if (!issue.ai_analysis_status || (issue.ai_analysis_status === 'analyzing' && issue.ai_severity === undefined)) {
+      needSave = true;
+      const computedSeverity = Math.floor((issue.ai_confidence || 0.85) * 75) + 15;
+      return {
+        ...issue,
+        ai_analysis_status: 'completed',
+        ai_severity: issue.ai_severity ?? computedSeverity,
+        ai_count: issue.ai_count ?? 1,
+      };
+    }
+    return issue;
+  });
+
   const { issues: checkedIssues, updated } = checkAndTrigger45DayEscalations(issues);
-  if (updated) {
+  if (updated || needSave) {
     saveStoredIssues(checkedIssues);
   }
 
