@@ -21,7 +21,8 @@ import {
   ShieldAlert,
   Loader2,
   Image as ImageIcon,
-  Wrench
+  Wrench,
+  Camera
 } from 'lucide-react';
 import { getIssueByIdOrNumber, getStoredHistory, getStoredEvidence, upvoteIssue } from '@/lib/store';
 import { fetchIssueByNumber, fetchHistory, fetchEvidence } from '@/lib/db';
@@ -296,6 +297,39 @@ export default function TrackComplaintPage() {
             </div>
           </div>
         </div>
+
+        {/* Primary Citizen Uploaded Defect Photo */}
+        {issue.photo_url && (
+          <div className="space-y-2.5 pt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase text-amber-400 tracking-wider flex items-center space-x-1.5">
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>Uploaded Citizen Defect Photographic Evidence</span>
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">
+                Verified On-Site Camera Capture
+              </span>
+            </div>
+
+            <div className="relative aspect-video sm:aspect-[21/9] max-h-96 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900 shadow-2xl group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={issue.photo_url}
+                alt={issue.title}
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+              />
+              <div className="absolute top-3 left-3 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-[11px] font-bold text-white flex items-center space-x-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>{issue.ai_detected_class || issue.category.toUpperCase()}</span>
+                {issue.ai_confidence && (
+                  <span className="text-emerald-400 font-mono">
+                    ({(issue.ai_confidence * 100).toFixed(0)}% AI Confirmed)
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
