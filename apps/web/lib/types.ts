@@ -77,6 +77,8 @@ export interface CivicIssue {
   reported_at: string;
   deadline_at: string;
   resolved_at?: string;
+  resolved_by?: string;
+  contractor_name?: string;
   escalated: boolean;
   escalation_graphic_url?: string;
   escalation_email_sent_at?: string;
