@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, CheckCircle, X, Shield, Lock, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../lib/authContext';
 
@@ -10,12 +11,28 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  const [mounted, setMounted] = useState(false);
   const { signInWithGoogle } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const resetState = () => {
     setError(null);
@@ -41,43 +58,44 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setIsSuccess(true);
       setTimeout(() => {
         handleClose();
-      }, 1300);
+      }, 1200);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
-        onClick={handleClose}
-      />
-
+  const modalContent = (
+    <div
+      onClick={handleClose}
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+    >
       {/* Modal Dialog */}
-      <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden animate-in zoom-in-95 duration-200">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative my-auto w-full max-w-md bg-white dark:bg-[#151C2C] text-slate-900 dark:text-white rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200"
+      >
         
         {/* Top Header Glow Bar */}
         <div className="h-2 bg-gradient-to-r from-[#1A56A4] via-[#176B3A] to-amber-500" />
 
         {/* Close Button */}
         <button
+          type="button"
           onClick={handleClose}
-          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all cursor-pointer z-10"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="p-8 sm:p-10 space-y-6">
+        <div className="p-7 sm:p-9 space-y-6">
 
           {/* SUCCESS SCREEN */}
           {isSuccess ? (
             <div className="py-8 text-center space-y-4 animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle className="w-9 h-9 animate-bounce" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-black text-slate-900">Signed In Successfully</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Signed In Successfully</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Welcome to CivicTrack Municipal Portal
                 </p>
               </div>
@@ -85,15 +103,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           ) : (
             <>
               {/* BRAND HEADER */}
-              <div className="text-center space-y-3">
-                <div className="w-14 h-14 bg-gradient-to-tr from-[#1A56A4] to-[#176B3A] rounded-2xl flex items-center justify-center mx-auto shadow-lg text-white">
+              <div className="text-center space-y-3 pt-1">
+                <div className="w-14 h-14 bg-gradient-to-tr from-[#EA580C] to-[#F97316] rounded-2xl flex items-center justify-center mx-auto shadow-lg text-white">
                   <Shield className="w-7 h-7" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                     Sign in to CivicTrack
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Municipal Infrastructure Grievance & Accountability System
                   </p>
                 </div>
@@ -101,7 +119,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
               {/* ERROR NOTICE */}
               {error && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs flex items-center space-x-2 animate-in fade-in">
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-2xl text-xs flex items-center space-x-2 animate-in fade-in">
                   <Lock className="w-4 h-4 shrink-0 text-rose-500" />
                   <span>{error}</span>
                 </div>
@@ -113,7 +131,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   type="button"
                   onClick={handleGoogleLogin}
                   disabled={googleLoading}
-                  className="w-full flex items-center justify-center space-x-3 py-4 px-6 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border-2 border-slate-200 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed group cursor-pointer"
+                  className="w-full flex items-center justify-center space-x-3 py-3.5 px-6 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-sm border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed group cursor-pointer"
                 >
                   {googleLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin text-[#1A56A4]" />
@@ -137,7 +155,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       />
                     </svg>
                   )}
-                  <span className="text-slate-800 font-extrabold">
+                  <span className="font-extrabold text-slate-800 dark:text-white">
                     {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
                   </span>
                 </button>
@@ -157,4 +175,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

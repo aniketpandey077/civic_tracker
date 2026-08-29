@@ -7,10 +7,11 @@ export async function compressImage(
   maxDimension: number = 1024,
   quality: number = 0.8
 ): Promise<File> {
-  // If running in SSR environment, return fallback
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
+  // If running in SSR / Node.js environment, return fallback
+  if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Image === 'undefined') {
     if (input instanceof File) return input;
     if (input instanceof Blob) return new File([input], 'upload.jpg', { type: 'image/jpeg' });
+    return new File([], 'upload.jpg', { type: 'image/jpeg' });
   }
 
   return new Promise((resolve, reject) => {

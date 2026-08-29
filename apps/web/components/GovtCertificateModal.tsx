@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Award, Shield, CheckCircle, Download, Printer, Sparkles, Building2, MapPin, QrCode, ArrowLeft } from 'lucide-react';
 import { GovtCertificateRecord } from '@/lib/civicScore';
 
@@ -16,6 +17,11 @@ export default function GovtCertificateModal({
   onClose,
 }: GovtCertificateModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close on Escape key press
   useEffect(() => {
@@ -28,25 +34,26 @@ export default function GovtCertificateModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !certificate) return null;
+  if (!isOpen || !certificate || !mounted) return null;
 
   const handlePrint = () => {
     window.print();
   };
 
-  return (
+  const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto animate-in fade-in"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-[#111827] text-slate-900 dark:text-white max-w-2xl w-full rounded-3xl border-2 border-amber-400 shadow-2xl overflow-hidden relative my-6"
+        className="relative my-auto bg-white dark:bg-[#111827] text-slate-900 dark:text-white max-w-2xl w-full rounded-3xl border-2 border-amber-400 shadow-2xl overflow-hidden my-6 animate-in zoom-in-95 duration-200"
       >
         
         {/* Modal Top Actions */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-amber-500/10 border-b border-amber-400/30">
           <button
+            type="button"
             onClick={onClose}
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
           >
@@ -61,6 +68,7 @@ export default function GovtCertificateModal({
 
           <div className="flex items-center space-x-2">
             <button
+              type="button"
               onClick={handlePrint}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer"
             >
@@ -68,6 +76,7 @@ export default function GovtCertificateModal({
               <span>Print / PDF</span>
             </button>
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
@@ -171,6 +180,7 @@ export default function GovtCertificateModal({
         {/* Bottom Back / Done Button */}
         <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
           <button
+            type="button"
             onClick={onClose}
             className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer"
           >
@@ -181,4 +191,6 @@ export default function GovtCertificateModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
