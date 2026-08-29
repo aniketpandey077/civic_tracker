@@ -18,7 +18,8 @@ import {
   LogOut,
   User,
   ShieldAlert,
-  Wrench
+  Wrench,
+  Award
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
@@ -37,6 +38,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/my-complaints', label: 'My Reports', icon: FileText },
+    { href: '/civic-score', label: 'Civic Score', icon: Award, tag: 'Honours' },
     { href: '/department', label: 'Dept Resolver', icon: Wrench, tag: 'Nearby' },
     { href: '/map', label: 'GIS Map', icon: Map },
     { href: '/dashboard', label: 'SLA Board', icon: BarChart3 },

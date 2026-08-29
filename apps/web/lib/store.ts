@@ -464,14 +464,22 @@ export function updateIssueStatus(
     }
   ]);
 
-  // Add notification
+  // Add notification (with special Thank You & Congratulations greeting upon successful resolution)
   const notifs = getStoredNotifications();
+  const isResolution = newStatus === 'resolved';
+  const notifTitle = isResolution
+    ? `🎉 Resolution Complete: Thank You & Congratulations!`
+    : `Status Updated: ${newStatus.toUpperCase()}`;
+  const notifMessage = isResolution
+    ? `Heartiest congratulations! Your reported grievance "${current.complaint_number}" (${current.category.replace(/_/g, ' ').toUpperCase()}) at ${current.zone_name} has been successfully resolved and verified. You earned +100 Civic Points towards your Quarterly Government Certificate of Civic Honour. Thank you for making our city safer!`
+    : `Ticket ${current.complaint_number} is now marked as ${newStatus}. ${departmentNote || ''}`;
+
   saveStoredNotifications([
     {
       id: `notif-${Date.now()}`,
-      type: newStatus === 'resolved' ? 'resolution' : 'status_change',
-      title: `Status Updated: ${newStatus.toUpperCase()}`,
-      message: `Ticket ${current.complaint_number} is now marked as ${newStatus}. ${departmentNote || ''}`,
+      type: isResolution ? 'resolution' : 'status_change',
+      title: notifTitle,
+      message: notifMessage,
       complaint_number: current.complaint_number,
       read: false,
       created_at: new Date().toISOString(),
