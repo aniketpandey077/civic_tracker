@@ -8,8 +8,13 @@ const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 const Footer = dynamic(() => import('@/components/Footer'), { ssr: false });
 
 export const metadata: Metadata = {
-  title: 'CIVICTRACK — Municipal Infrastructure Grievance & Accountability System',
+  title: 'CIVICTRACKER — Municipal Infrastructure Grievance & Accountability System',
   description: 'Official municipal civic defect registry featuring YOLOv8 edge computer vision, ward-level PostGIS routing, 15-day SLA compliance tracking, and citizen-verified evidence closure.',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

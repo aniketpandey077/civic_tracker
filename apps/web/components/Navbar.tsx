@@ -52,12 +52,15 @@ export default function Navbar() {
 
           {/* Brand */}
           <Link href="/" className="flex items-center space-x-3 group shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#EA580C] to-[#F97316] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-              <Shield className="w-5 h-5" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon.png"
+              alt="CivicTracker"
+              className="w-10 h-10 rounded-2xl shadow-md group-hover:scale-105 transition-transform object-cover"
+            />
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white">CivicTrack</span>
+                <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white">CivicTracker</span>
                 <span className="text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Radio className="w-2.5 h-2.5 text-blue-500 animate-pulse" />
                   <span suppressHydrationWarning>

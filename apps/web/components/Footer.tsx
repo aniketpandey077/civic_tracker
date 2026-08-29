@@ -16,11 +16,14 @@ export default function Footer() {
 
           {/* Brand col */}
           <div className="space-y-4 md:col-span-1">
-            <Link href="/" className="flex items-center space-x-2 text-white font-bold text-base group">
-              <div className="w-8 h-8 rounded-lg bg-[#D95F02] flex items-center justify-center text-white shadow-sm group-hover:bg-[#C04F00] transition-colors">
-                <Shield className="w-4 h-4" />
-              </div>
-              <span className="font-extrabold tracking-tight">CivicTrack</span>
+            <Link href="/" className="flex items-center space-x-2.5 text-white font-bold text-base group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/icon.png"
+                alt="CivicTracker"
+                className="w-8 h-8 rounded-xl shadow-sm group-hover:scale-105 transition-transform object-cover"
+              />
+              <span className="font-extrabold tracking-tight">CivicTracker</span>
             </Link>
             <p className="text-[#9CA3AF] leading-relaxed text-xs">
               Turning civic complaints into traceable digital tickets with computer vision validation, geofenced alerts, and transparent resolution evidence.
