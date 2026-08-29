@@ -17,7 +17,7 @@ import { fetchAccountabilityLeaderboard, fetchPerformanceLeaderboard, fetchDashb
 import { ZoneLeaderboardAccountability, ZoneLeaderboardPerformance, DashboardMetrics, ZoneBudgetData } from '@/lib/types';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import BudgetCard from '@/components/BudgetCard';
-import zoneBudgets from '../../../../data/budget/zone_budgets.json';
+import { ZONE_BUDGETS } from '@/lib/budgetData';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
@@ -27,7 +27,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Fetch real data from Supabase
+    // Fetch real data from Firebase Firestore
     fetchAccountabilityLeaderboard().then(setAccountabilityData);
     fetchPerformanceLeaderboard().then(setPerformanceData);
     fetchDashboardMetrics().then(setMetrics);
@@ -141,7 +141,7 @@ export default function DashboardPage() {
 
       {/* Budget Transparency Section */}
       <div className="glass-card rounded-3xl p-6 sm:p-8 border border-[#C9C4BA] shadow-xl space-y-6">
-        <BudgetCard budgets={zoneBudgets as ZoneBudgetData[]} />
+        <BudgetCard budgets={ZONE_BUDGETS} />
       </div>
     </div>
   );

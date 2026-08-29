@@ -252,9 +252,9 @@ export default function ReportForm() {
         has_upvoted: true,
       };
 
-      // Save to Supabase DB and local store so both live phone scans and local client see the new docket immediately
+      // Save to Firebase Firestore database and local store so both live phone scans and local client see the new docket immediately
       const savedIssue = await createIssue(newIssue).catch(err => {
-        console.warn('Supabase create issue note:', err);
+        console.warn('Firebase Firestore create issue note:', err);
         return null;
       });
       addIssue(savedIssue || newIssue);

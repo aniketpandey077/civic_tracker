@@ -41,7 +41,7 @@ export default function MyComplaintsPage() {
   const { user, signInWithGoogle } = useAuth();
 
   const loadIssues = async () => {
-    // Merge both Supabase DB issues and local store issues so user sees everything immediately
+    // Merge both Firebase Firestore DB issues and local store issues so user sees everything immediately
     const localIssues = getStoredIssues();
     // Decorate all issues with has_upvoted from local upvoted IDs
     const upvotedIds = new Set(getUserUpvotedIssues());

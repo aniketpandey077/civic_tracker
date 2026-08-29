@@ -271,7 +271,7 @@ export default function EvidenceModal({
     setIsSubmitting(true);
 
     try {
-      // 1. Submit to Supabase (correct arg order: issueId, beforeUrl, afterUrl, description, contractorName)
+      // 1. Submit to Firebase Firestore (correct arg order: issueId, beforeUrl, afterUrl, description, contractorName)
       await adminSubmitEvidence(
         issue.id,
         issue.photo_url,

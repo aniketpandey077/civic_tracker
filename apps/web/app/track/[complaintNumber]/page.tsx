@@ -60,7 +60,7 @@ export default function TrackComplaintPage() {
     setLoading(true);
 
     try {
-      // 1. Primary: Fetch from live Supabase database
+      // 1. Primary: Fetch from live Firebase Firestore database
       const dbIssue = await fetchIssueByNumber(complaintNumber);
       if (dbIssue) {
         setIssue(dbIssue);
@@ -74,7 +74,7 @@ export default function TrackComplaintPage() {
         return;
       }
     } catch (err) {
-      console.warn('[Track] Supabase fetch fallback to local store:', err);
+      console.warn('[Track] Firebase Firestore fetch fallback to local store:', err);
     }
 
     // 2. Fallback: Check local store

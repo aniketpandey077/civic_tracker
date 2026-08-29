@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
   const handleDeleteDocket = async (issueId: string, complaintNumber: string) => {
     if (!confirm(`Are you sure you want to PURGE ticket ${complaintNumber}? This action is irreversible.`)) return;
 
-    // 1. Delete from Supabase with full cascade
+    // 1. Delete from Firebase Firestore with full cascade
     await adminDeleteIssue(issueId);
 
     // 2. Delete from local storage & broadcast update to all open pages
@@ -252,7 +252,7 @@ export default function AdminDashboardPage() {
 
   if (!mounted) return null;
 
-  // Strict Access Guard: Only allow users with admin / superadmin role in Supabase
+  // Strict Access Guard: Only allow users with admin / superadmin role
   if (!isAdmin) {
     return (
       <div className="max-w-xl mx-auto py-20 px-4 text-center space-y-6 animate-in fade-in">
@@ -264,7 +264,7 @@ export default function AdminDashboardPage() {
             Administrator Access Restricted
           </h2>
           <p className="text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
-            This command center is protected and only accessible to verified municipal administrators with role assigned in the database.
+            This command center is protected and only accessible to verified municipal administrators with role assigned in Firebase.
           </p>
         </div>
 
@@ -288,13 +288,13 @@ export default function AdminDashboardPage() {
               setRoleRefreshing(true);
               const newRole = await refreshRole();
               setRoleRefreshing(false);
-              showSuccessBanner(`Checked Supabase: Role is ${newRole.toUpperCase()}`);
+              showSuccessBanner(`Checked Firebase: Role is ${newRole.toUpperCase()}`);
             }}
             disabled={roleRefreshing}
             className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-2.5 bg-[#1A56A4] hover:bg-[#154687] text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${roleRefreshing ? 'animate-spin' : ''}`} />
-            <span>{roleRefreshing ? 'Checking Supabase...' : 'Refresh Role from Supabase'}</span>
+            <span>{roleRefreshing ? 'Checking Firebase...' : 'Refresh Role from Firebase'}</span>
           </button>
 
           <Link
@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Supabase Role & Access Verification Bar */}
+      {/* Firebase Role & Access Verification Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-3">
           <div className={`p-2 rounded-xl ${isAdmin ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -369,8 +369,8 @@ export default function AdminDashboardPage() {
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
               {isAdmin
-                ? '✅ Verified Administrator access authorized by Supabase Public Users table.'
-                : 'ℹ️ Role assigned as Citizen. To elevate to Admin, change role to "admin" in your Supabase `users` table.'}
+                ? '✅ Verified Administrator access authorized by Firebase.'
+                : 'ℹ️ Role assigned as Citizen. To elevate to Admin, change role to "admin" in your Firebase `users` collection.'}
             </p>
           </div>
         </div>
@@ -382,13 +382,13 @@ export default function AdminDashboardPage() {
               setRoleRefreshing(true);
               const newRole = await refreshRole();
               setRoleRefreshing(false);
-              showSuccessBanner(`Role updated from Supabase: ${newRole.toUpperCase()}`);
+              showSuccessBanner(`Role updated from Firebase: ${newRole.toUpperCase()}`);
             }}
             disabled={roleRefreshing}
             className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all shadow-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${roleRefreshing ? 'animate-spin' : ''}`} />
-            <span>{roleRefreshing ? 'Checking Supabase...' : 'Refresh Role from Supabase'}</span>
+            <span>{roleRefreshing ? 'Checking Firebase...' : 'Refresh Role from Firebase'}</span>
           </button>
         </div>
       </div>
@@ -406,7 +406,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
           <span className="text-[11px] font-bold uppercase text-slate-500">Total Dockets</span>
           <div className="text-2xl font-black text-slate-900 font-mono-data">{issues.length}</div>
-          <span className="text-[10px] text-emerald-600 font-semibold">● Real-time Supabase</span>
+          <span className="text-[10px] text-emerald-600 font-semibold">● Real-time Firestore</span>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
