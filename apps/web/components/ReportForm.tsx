@@ -53,6 +53,7 @@ export default function ReportForm() {
 
   // 50m Spatial Deduplication State
   const [nearbyDuplicate, setNearbyDuplicate] = useState<NearbyIssueMatch | null>(null);
+  const [dismissedDuplicateId, setDismissedDuplicateId] = useState<string | null>(null);
 
   // Voice Dictation state
   const [isListening, setIsListening] = useState(false);
@@ -85,15 +86,19 @@ export default function ReportForm() {
 
     lookupGeo();
 
-    // Check 50m deduplication against existing issues
+    // Check 50m deduplication against existing issues ONLY for the SAME problem category
     const issues = getStoredIssues();
-    const match = findNearbyExistingIssue(latitude, longitude, issues, 50);
-    setNearbyDuplicate(match);
+    const match = findNearbyExistingIssue(latitude, longitude, issues, 50, category);
+    if (match && match.issue.id !== dismissedDuplicateId) {
+      setNearbyDuplicate(match);
+    } else {
+      setNearbyDuplicate(null);
+    }
 
     return () => {
       isCurrent = false;
     };
-  }, [latitude, longitude, category]);
+  }, [latitude, longitude, category, dismissedDuplicateId]);
 
   const fetchCurrentLocation = () => {
     if (typeof window === 'undefined') return;
@@ -312,7 +317,7 @@ export default function ReportForm() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 pt-1 text-xs">
+          <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
             <button
               type="button"
               onClick={() => handleMergeDuplicate(nearbyDuplicate.issue.id)}
@@ -322,10 +327,20 @@ export default function ReportForm() {
             </button>
             <button
               type="button"
-              onClick={() => router.push(`/track/${nearbyDuplicate.issue.complaint_number}`)}
-              className="px-4 py-2.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-slate-800 border border-[#D95F02]/40 font-semibold rounded-xl transition-all cursor-pointer"
+              onClick={() => {
+                setDismissedDuplicateId(nearbyDuplicate.issue.id);
+                setNearbyDuplicate(null);
+              }}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-sm transition-all cursor-pointer"
             >
-              View Ticket Docket
+              File Separate New Ticket Anyway →
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(`/track/${nearbyDuplicate.issue.complaint_number}`)}
+              className="px-3.5 py-2.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-slate-800 border border-[#D95F02]/40 font-semibold rounded-xl transition-all cursor-pointer"
+            >
+              View Docket
             </button>
           </div>
         </div>

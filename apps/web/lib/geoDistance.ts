@@ -36,12 +36,16 @@ export function findNearbyExistingIssue(
   userLat: number,
   userLng: number,
   issues: CivicIssue[],
-  thresholdMeters: number = 50
+  thresholdMeters: number = 50,
+  category?: string
 ): NearbyIssueMatch | null {
   let closestMatch: NearbyIssueMatch | null = null;
 
   for (const issue of issues) {
     if (issue.status === 'resolved') continue;
+
+    // Only consider duplicate if it is the SAME problem category (e.g. pothole matches pothole, not broken streetlight)
+    if (category && issue.category !== category) continue;
 
     const distance = calculateDistanceMeters(userLat, userLng, issue.latitude, issue.longitude);
     if (distance <= thresholdMeters) {
