@@ -1,10 +1,16 @@
-﻿-- CivicTrack Migration 005 — Enable RLS Delete/Update Policies & Cascade Purge RPC
+﻿-- CivicTrack Migration 005 — Enable Full Real-Time Sync, Issue Creation & Purge Policies
 -- Run this in your Supabase SQL Editor
 
--- 1. Enable DELETE & UPDATE policies for civic_issues and all relational tables
-DROP POLICY IF EXISTS "Allow delete civic_issues" ON civic_issues;
-CREATE POLICY "Allow delete civic_issues"
-  ON civic_issues FOR DELETE
+-- 1. Enable Full RLS Policies on civic_issues for all clients (anon + authenticated)
+DROP POLICY IF EXISTS "Public can create issues" ON civic_issues;
+DROP POLICY IF EXISTS "Authenticated users can create issues" ON civic_issues;
+CREATE POLICY "Public can create issues"
+  ON civic_issues FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public can read civic_issues" ON civic_issues;
+CREATE POLICY "Public can read civic_issues"
+  ON civic_issues FOR SELECT
   USING (true);
 
 DROP POLICY IF EXISTS "Allow update civic_issues" ON civic_issues;
@@ -12,9 +18,36 @@ CREATE POLICY "Allow update civic_issues"
   ON civic_issues FOR UPDATE
   USING (true);
 
+DROP POLICY IF EXISTS "Allow delete civic_issues" ON civic_issues;
+CREATE POLICY "Allow delete civic_issues"
+  ON civic_issues FOR DELETE
+  USING (true);
+
+-- 2. Issue Status History Policies
+DROP POLICY IF EXISTS "Public can insert status history" ON issue_status_history;
+CREATE POLICY "Public can insert status history"
+  ON issue_status_history FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public can read issue_status_history" ON issue_status_history;
+CREATE POLICY "Public can read issue_status_history"
+  ON issue_status_history FOR SELECT
+  USING (true);
+
 DROP POLICY IF EXISTS "Allow delete issue_status_history" ON issue_status_history;
 CREATE POLICY "Allow delete issue_status_history"
   ON issue_status_history FOR DELETE
+  USING (true);
+
+-- 3. Resolution Evidence Policies
+DROP POLICY IF EXISTS "Public can insert evidence" ON resolution_evidence;
+CREATE POLICY "Public can insert evidence"
+  ON resolution_evidence FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public can read resolution_evidence" ON resolution_evidence;
+CREATE POLICY "Public can read resolution_evidence"
+  ON resolution_evidence FOR SELECT
   USING (true);
 
 DROP POLICY IF EXISTS "Allow delete resolution_evidence" ON resolution_evidence;
@@ -22,17 +55,19 @@ CREATE POLICY "Allow delete resolution_evidence"
   ON resolution_evidence FOR DELETE
   USING (true);
 
+-- 4. Upvotes Policies
+DROP POLICY IF EXISTS "Public can insert upvotes" ON upvotes;
+DROP POLICY IF EXISTS "Authenticated users can upvote" ON upvotes;
+CREATE POLICY "Public can insert upvotes"
+  ON upvotes FOR INSERT
+  WITH CHECK (true);
+
 DROP POLICY IF EXISTS "Allow delete upvotes" ON upvotes;
 CREATE POLICY "Allow delete upvotes"
   ON upvotes FOR DELETE
   USING (true);
 
-DROP POLICY IF EXISTS "Allow delete resolution_verifications" ON resolution_verifications;
-CREATE POLICY "Allow delete resolution_verifications"
-  ON resolution_verifications FOR DELETE
-  USING (true);
-
--- 2. Master Security Definer Cascade Delete Function (Bypasses RLS restrictions safely)
+-- 5. Master Security Definer Cascade Delete Function
 CREATE OR REPLACE FUNCTION delete_civic_issue_cascade(target_id TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql

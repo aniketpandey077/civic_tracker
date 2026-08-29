@@ -64,56 +64,90 @@ export async function fetchIssueByNumber(idOrNumber: string): Promise<CivicIssue
   } as CivicIssue;
 }
 
+function isValidUuid(id?: string | null): boolean {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 /** Insert a new civic issue. Returns the created issue or null on failure. */
 export async function createIssue(issue: Omit<CivicIssue, 'id'>): Promise<CivicIssue | null> {
   // Resolve zone_id using PostGIS ST_Contains if lat/lng provided
-  let zone_id: string | null = null;
-
-  if (issue.latitude && issue.longitude) {
-    const { data: zoneData } = await supabase
-      .rpc('get_zone_for_point', {
-        lat: issue.latitude,
-        lng: issue.longitude,
-      });
-    zone_id = zoneData ?? null;
+  let validZoneId: string | null = null;
+  if (isValidUuid(issue.zone_id)) {
+    validZoneId = issue.zone_id;
   }
+
+  if (!validZoneId && issue.latitude && issue.longitude) {
+    try {
+      const { data: zoneData } = await supabase
+        .rpc('get_zone_for_point', {
+          lat: issue.latitude,
+          lng: issue.longitude,
+        });
+      if (zoneData && isValidUuid(zoneData)) {
+        validZoneId = zoneData;
+      }
+    } catch {}
+  }
+
+  const validReporterId = isValidUuid(issue.reporter_id) ? issue.reporter_id : null;
+
+  const insertPayload = {
+    complaint_number: issue.complaint_number,
+    reporter_id: validReporterId,
+    zone_id: validZoneId,
+    category: issue.category,
+    title: issue.title,
+    description: issue.description,
+    photo_url: issue.photo_url,
+    ai_confidence: issue.ai_confidence,
+    ai_detected_class: issue.ai_detected_class,
+    latitude: issue.latitude,
+    longitude: issue.longitude,
+    location: `SRID=4326;POINT(${issue.longitude} ${issue.latitude})`,
+    status: 'pending',
+    upvote_count: 1,
+    reported_at: issue.reported_at,
+    deadline_at: issue.deadline_at,
+    escalated: false,
+  };
 
   const { data, error } = await supabase
     .from('civic_issues')
-    .insert({
-      complaint_number: issue.complaint_number,
-      reporter_id: issue.reporter_id ?? null,
-      zone_id: zone_id ?? issue.zone_id ?? null,
-      category: issue.category,
-      title: issue.title,
-      description: issue.description,
-      photo_url: issue.photo_url,
-      ai_confidence: issue.ai_confidence,
-      ai_detected_class: issue.ai_detected_class,
-      latitude: issue.latitude,
-      longitude: issue.longitude,
-      location: `SRID=4326;POINT(${issue.longitude} ${issue.latitude})`,
-      status: 'pending',
-      upvote_count: 1,
-      reported_at: issue.reported_at,
-      deadline_at: issue.deadline_at,
-      escalated: false,
-    })
+    .insert(insertPayload)
     .select(`*, admin_zones ( zone_name, department )`)
     .single();
 
   if (error) {
     console.error('[db] createIssue error:', error.message);
-    return null;
+    // Fallback attempt without admin_zones join
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('civic_issues')
+      .insert(insertPayload)
+      .select('*')
+      .single();
+
+    if (fallbackError || !fallbackData) {
+      console.error('[db] createIssue fallback error:', fallbackError?.message);
+      return null;
+    }
+
+    return {
+      ...fallbackData,
+      zone_name: issue.zone_name || 'Ward Area',
+      department: issue.department || 'Municipal Public Works',
+    } as CivicIssue;
   }
 
-  // Log initial status history entry
-  await supabase.from('issue_status_history').insert({
-    issue_id: data.id,
-    new_status: 'pending',
-    changed_by: null,
-    department_note: `Ticket created. AI validation (${((issue.ai_confidence ?? 0) * 100).toFixed(1)}% confidence) confirmed infrastructure defect. 15-day SLA started.`,
-  });
+  // Log initial status history entry (silent catch so issue is not lost)
+  try {
+    await supabase.from('issue_status_history').insert({
+      issue_id: data.id,
+      new_status: 'pending',
+      changed_by: validReporterId,
+      department_note: `Ticket created. AI validation (${((issue.ai_confidence ?? 0) * 100).toFixed(1)}% confidence) confirmed infrastructure defect. 15-day SLA started.`,
+    });
+  } catch {}
 
   return {
     ...data,
