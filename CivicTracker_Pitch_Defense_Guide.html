@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicTracker — Hackathon Defense & Judge Pitch Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&family=Lora:ital,wght@0,600;1,400&display=swap');
+
+    :root {
+      --primary: #ea580c;
+      --primary-dark: #c2410c;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --emerald: #059669;
+      --blue: #2563eb;
+      --purple: #7c3aed;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--slate-900);
+      background: #f8fafc;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 50px 60px;
+      border-radius: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 25px;
+      margin-bottom: 35px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo-badge {
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 24px;
+      box-shadow: 0 8px 16px rgba(234, 88, 12, 0.25);
+    }
+
+    .title-group h1 {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--slate-900);
+    }
+
+    .title-group p {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .print-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 800;
+      border-radius: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .print-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pitch-box {
+      background: linear-gradient(135deg, #fff7ed, #ffedd5);
+      border-left: 6px solid var(--primary);
+      padding: 24px;
+      border-radius: 0 18px 18px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #7c2d12;
+      line-height: 1.7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 800;
+      color: var(--slate-700);
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    td strong {
+      color: var(--slate-900);
+      font-weight: 700;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-top: 15px;
+    }
+
+    .card {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .card h4 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 6px;
+    }
+
+    .card p {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .qa-block {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    .qa-q {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+
+    .qa-a {
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.6;
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border-left: 3px solid var(--emerald);
+    }
+
+    .steps-list {
+      list-style: none;
+      counter-reset: step-counter;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .steps-list li {
+      counter-increment: step-counter;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #f8fafc;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate-800);
+    }
+
+    .steps-list li::before {
+      content: counter(step-counter);
+      background: var(--primary);
+      color: white;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 12px;
+      shrink: 0;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+        background: white;
+      }
+      .container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .print-btn {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <div class="logo-badge">CT</div>
+        <div class="title-group">
+          <h1>CivicTracker Defense & Pitch Guide</h1>
+          <p>Municipal Infrastructure Grievance & Accountability System</p>
+        </div>
+      </div>
+      <button class="print-btn" onclick="window.print()">
+        🖨️ Save as PDF / Print
+      </button>
+    </div>
+
+    <!-- Section 1: 30s Pitch -->
+    <div class="section">
+      <div class="section-title">🎯 1. The 30-Second Winning Pitch</div>
+      <div class="pitch-box">
+        "Current municipal portals fail due to zero accountability, fake closures by contractors, and lack of citizen incentives. <strong>CivicTracker</strong> transforms civic redressal with three pillars: (1) <strong>Dual-Stage Vision AI</strong> to validate complaints and audit repairs with binary YES/NO proof, (2) <strong>Automated 15-Day SLA with Ray-Casting Spatial Ward Routing</strong>, and (3) <strong>Civic Sense Gamification</strong> rewarding the Top 3 citizens every 3 months with official Government Certificates."
+      </div>
+    </div>
+
+    <!-- Section 2: Architecture -->
+    <div class="section">
+      <div class="section-title">🏗️ 2. Technical Stack & Architecture</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Core Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Frontend</strong></td>
+            <td>Next.js 15 App Router, React 19, Tailwind CSS</td>
+            <td>Responsive UI, body-portaled modals, interactive maps</td>
+          </tr>
+          <tr>
+            <td><strong>AI Engine</strong></td>
+            <td>Google Gemini 2.0 / 1.5 Flash Vision + YOLOv8</td>
+            <td>Defect detection, severity scoring (1–5), Before/After repair verification</td>
+          </tr>
+          <tr>
+            <td><strong>Database & Auth</strong></td>
+            <td>Firebase Firestore & Google Auth</td>
+            <td>Real-time ticket updates, citizen and admin role governance</td>
+          </tr>
+          <tr>
+            <td><strong>GIS & Location</strong></td>
+            <td>OpenStreetMap Nominatim + Ray-Casting Polygon</td>
+            <td>GPS reverse geocoding, ward matching, proximity sorting</td>
+          </tr>
+          <tr>
+            <td><strong>SLA Engine</strong></td>
+            <td>Statutory Compliance Logic & Escalation</td>
+            <td>15-day automated countdown, 500-upvote emergency compression</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 3: Killer Features -->
+    <div class="section">
+      <div class="section-title">💡 3. Key Innovations</div>
+      <div class="card-grid">
+        <div class="card">
+          <h4>1. Dual-Stage Vision AI</h4>
+          <p>Validates real defects on intake and ensures contractors cannot upload blank or fake photos to close tickets.</p>
+        </div>
+        <div class="card">
+          <h4>2. 15-Day Statutory SLA</h4>
+          <p>Automated countdown timestamps. Overdue tickets escalate publicly to the municipal commissioner.</p>
+        </div>
+        <div class="card">
+          <h4>3. Point-in-Polygon Ward Routing</h4>
+          <p>Spatial ray-casting routes issues to the exact ward (PWD, Sanitation, Water Works) without manual delays.</p>
+        </div>
+        <div class="card">
+          <h4>4. 3-Month Civic Honours Cycle</h4>
+          <p>Permanent Civic Sense Rating (100–1000) with quarterly leaderboard resets awarding printable Govt Certificates.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Anticipated Judge Q&A -->
+    <div class="section">
+      <div class="section-title">❓ 4. Tough Judge Questions & Winning Answers</div>
+
+      <div class="qa-block">
+        <div class="qa-q">Q1: How do you prevent spam or fake complaint submissions?</div>
+        <div class="qa-a">"Our client-side compressor optimizes images, and Gemini Vision immediately evaluates the photo. If it detects a non-defect image (like a meme or selfie), the system rejects it before docket creation."</div>
+      </div>
+
+      <div class="qa-block">
+        <div class="qa-q">Q2: What prevents contractors from closing tickets with fake 'resolved' photos?</div>
+        <div class="qa-a">"Our Stage-2 AI Resolution Auditor compares the original defect against the resolution photo. If the pothole or garbage dump is still present, Gemini flags it as NO (Rework Required) and blocks closure."</div>
+      </div>
+
+      <div class="qa-block">
+        <div class="qa-q">Q3: Why reset points every 3 months?</div>
+        <div class="qa-a">"Resetting competition points quarterly ensures newcomers always have a fair chance to win government certificates, while their lifetime Civic Sense Rating is permanently preserved."</div>
+      </div>
+
+      <div class="qa-block">
+        <div class="qa-q">Q4: How does the system handle poor internet connectivity?</div>
+        <div class="qa-a">"Images are compressed down to ~150KB on the browser canvas before transmission, allowing instant uploads even on slow 2G/3G networks."</div>
+      </div>
+    </div>
+
+    <!-- Section 5: Demo Flow -->
+    <div class="section">
+      <div class="section-title">🎬 5. The 3-Minute Live Demo Flow</div>
+      <ol class="steps-list">
+        <li><strong>Homepage:</strong> Point out live ward detection (`PHAGWARA`), real-time metric counters, and CT branding.</li>
+        <li><strong>Report Issue:</strong> Upload a defect photo $\rightarrow$ showcase instant AI defect classification and severity score.</li>
+        <li><strong>Field Resolver:</strong> Show proximity-sorted tickets $\rightarrow$ trigger Stage-2 Gemini resolution audit (YES / NO).</li>
+        <li><strong>SLA Leaderboard:</strong> Display the 10 official municipal wards ranked by speed and resolution rates.</li>
+        <li><strong>Civic Certificate:</strong> Open User Profile $\rightarrow$ Civic Score $\rightarrow$ open official printable Government Certificate!</li>
+      </ol>
+    </div>
+
+  </div>
+
+</body>
+</html>
