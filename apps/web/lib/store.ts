@@ -151,10 +151,32 @@ export function saveStoredNotifications(notifs: NotificationItem[]) {
 }
 
 // Issue Operations
+export function getUserFiledComplaints(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('civic_user_filed_complaints');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addUserFiledComplaint(complaintNumber: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const list = new Set(getUserFiledComplaints());
+    list.add(complaintNumber);
+    localStorage.setItem('civic_user_filed_complaints', JSON.stringify(Array.from(list)));
+  } catch {}
+}
+
 export function addIssue(issue: CivicIssue): CivicIssue {
   const issues = getStoredIssues();
   const updated = [issue, ...issues];
   saveStoredIssues(updated);
+
+  // Track this complaint number as filed by the current user (device)
+  addUserFiledComplaint(issue.complaint_number);
 
   // Add initial history
   const history = getStoredHistory();

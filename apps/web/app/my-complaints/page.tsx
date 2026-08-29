@@ -23,7 +23,7 @@ import {
   Lock,
   ExternalLink
 } from 'lucide-react';
-import { getStoredIssues, upvoteIssue, saveStoredIssues } from '@/lib/store';
+import { getStoredIssues, upvoteIssue, saveStoredIssues, getUserFiledComplaints, getUserUpvotedIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
 import { CivicIssue } from '@/lib/types';
 import { useAuth } from '@/lib/authContext';
@@ -43,19 +43,24 @@ export default function MyComplaintsPage() {
   const loadIssues = async () => {
     // Merge both Supabase DB issues and local store issues so user sees everything immediately
     const localIssues = getStoredIssues();
+    // Decorate all issues with has_upvoted from local upvoted IDs
+    const upvotedIds = new Set(getUserUpvotedIssues());
+    const decorate = (list: typeof localIssues) =>
+      list.map(i => ({ ...i, has_upvoted: upvotedIds.has(i.id) || !!i.has_upvoted }));
+
     try {
       const dbIssues = await fetchIssues();
       if (dbIssues && dbIssues.length > 0) {
         // Merge: prefer DB records, supplement with local records not yet in DB
         const dbNumbers = new Set(dbIssues.map(i => i.complaint_number));
         const localOnly = localIssues.filter(i => !dbNumbers.has(i.complaint_number));
-        const merged = [...dbIssues, ...localOnly];
+        const merged = decorate([...dbIssues, ...localOnly]);
         saveStoredIssues(merged);
         setRawIssues(merged);
         return;
       }
     } catch {}
-    setRawIssues(localIssues);
+    setRawIssues(decorate(localIssues));
   };
 
   useEffect(() => {
@@ -110,15 +115,20 @@ export default function MyComplaintsPage() {
   }
 
   // Filter issues registered by the current logged-in user
-  const userIdentifier = user.displayName?.toLowerCase() || user.email?.toLowerCase() || '';
+  // Uses 3 reliable signals in priority order:
+  // 1. civic_user_filed_complaints localStorage key (set when user submits a report on this device)
+  // 2. reporter_id matches current user id
+  // 3. reporter_name includes user name/email (fallback for old records)
+  // 4. has_upvoted (decorated from local upvoted IDs)
+  const filedNumbers = new Set(getUserFiledComplaints());
   const myIssues = rawIssues.filter((issue) => {
+    if (filedNumbers.has(issue.complaint_number)) return true;
+    if (user.id && issue.reporter_id === user.id) return true;
     const reporter = (issue.reporter_name || '').toLowerCase();
-    const isOwner =
-      (user.email && reporter.includes(user.email.toLowerCase())) ||
-      (user.displayName && reporter.includes(user.displayName.toLowerCase())) ||
-      (userIdentifier && reporter.includes(userIdentifier)) ||
-      issue.has_upvoted;
-    return isOwner;
+    if (user.email && reporter.includes(user.email.toLowerCase())) return true;
+    if (user.displayName && reporter.includes(user.displayName.toLowerCase())) return true;
+    if (issue.has_upvoted) return true;
+    return false;
   });
 
   const filtered = myIssues.filter((issue) => {
