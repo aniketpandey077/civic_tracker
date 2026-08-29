@@ -48,30 +48,37 @@ export async function POST(req: NextRequest) {
 
     // ── If Gemini API key is present, call Google Gemini Vision API ─────────
     if (apiKey) {
-      const prompt = `You are an authoritative Municipal Infrastructure Safety Inspector and Computer Vision Verifier for CivicTrack.
+      const prompt = `You are an expert Municipal Infrastructure Safety Inspector and Computer Vision Verifier for CivicTrack.
 The citizen reported an infrastructure problem with category: "${issueType}".
 Citizen Description: "${description || 'None provided'}".
 
-TASK 1: STRICT VISUAL VERIFICATION (NO FAKE / IRRELEVANT REPORTS)
+TASK 1: VISUAL CLASSIFICATION & DEFECT VERIFICATION
 Carefully inspect the submitted image:
-- Does this photo show an actual civic / municipal infrastructure defect, public safety hazard, road/sanitation problem, blind corner, dark street, overgrown sidewalk, or municipal defect?
-- If the image is a selfie, a human portrait, private room/indoor living area, pets/animals (unless dead animal sanitation requested), food/drink, an undamaged road/sidewalk, a meme, artwork, screen capture, or unrelated object:
-  * "detected": false
-  * "is_civic_issue": false
-  * "severity": 0
-  * "rejection_reason": "No civic or infrastructure defect detected in this photo."
-  * "description": "AI analysis rejected: The submitted photo does not contain a municipal hazard or infrastructure defect."
+- VALID DEFECTS (Mark "detected": true, "is_civic_issue": true):
+  * Road Defects / Potholes: Any road cavities, craters, water-filled potholes, asphalt erosion, depression cavities, broken concrete/tarmac, uneven dirt/gravel road damage, surface sinkholes.
+  * Streetlights: Broken, shattered, unlit, dark street, missing bulb, bent pole.
+  * Traffic / Road: Blind corners, blocked vision intersections, missing road signs.
+  * Sanitation: Garbage dumps, overflowing bins, open waste, dead animals.
+  * Water: Water leakage, pipe bursts, flooded streets, water logging.
+  * Safety: Exposed/dangling wires, missing manhole covers, lack of security/CCTV in public zone, overgrown vegetation/bushes blocking walking paths.
 
-TASK 2: GENUINE SEVERITY SCORING (1 to 100)
-If and ONLY IF this is a genuine municipal / civic infrastructure issue:
-- "detected": true
-- "is_civic_issue": true
-- Calculate a realistic severity score between 1 and 100 based strictly on visual evidence:
-  * 1-30 (Low Risk): Minor cosmetic or non-hazardous issue (e.g. minor litter, small branch overgrowth).
-  * 31-60 (Moderate Risk): Noticeable public inconvenience (e.g. standard garbage bin overflow, broken footpath slab).
-  * 61-80 (High Risk): Significant hazard (e.g. blind corner obstruction, lack of CCTV in vulnerable zone, deep road caving, sewer leak).
-  * 81-100 (Critical / Severe Emergency): Immediate threat to human life or health (e.g. exposed 440V dangling wires, open manhole shaft, total road collapse).
-- "hazards_detected": Array of 2 to 4 specific visual observations (e.g. ["Live uninsulated power conductor", "Proximity to pedestrian zone"]).
+- INVALID / NON-INFRASTRUCTURE (Mark "detected": false, "is_civic_issue": false, "severity": 0):
+  * Handwritten paper, notebook text, documents, printed paper.
+  * Human selfies, facial portraits, people posing.
+  * Indoor domestic rooms (living room, bedroom, indoor kitchen, office desk).
+  * Food, drinks, snacks, meals.
+  * Domestic pets, cats, dogs.
+  * Smooth, pristine, undamaged roads with zero defects.
+  * Memes, drawings, digital artwork, computer screenshots.
+
+TASK 2: SEVERITY SCORING (1 to 100)
+If this is a valid defect:
+- Calculate a realistic severity score between 1 and 100:
+  * 1-30 (Low Risk): Minor superficial defect or small inconvenience.
+  * 31-60 (Moderate Risk): Noticeable public inconvenience or vehicle slowdown.
+  * 61-80 (High Risk): Significant hazard (e.g. deep pothole cavity, water-filled pothole causing skidding, blind intersection, broken street lighting).
+  * 81-100 (Critical / Life Threat): Immediate danger (e.g. exposed 440V wires, open deep manhole, collapsed roadway).
+- "hazards_detected": Array of 2 to 4 specific visual observations (e.g. ["Deep water-filled road cavity", "Vehicle tire damage risk", "Pedestrian trip hazard"]).
 - "description": Professional 1-2 sentence engineering assessment.
 - "confidence": Float between 0.88 and 0.99.
 
