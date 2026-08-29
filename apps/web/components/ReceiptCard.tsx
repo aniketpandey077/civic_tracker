@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Download, Shield, CheckCircle, ExternalLink, QrCode } from 'lucide-react';
-import QRCode from 'qrcode';
+import { Download, Shield, CheckCircle, ExternalLink, QrCode, Copy, Check } from 'lucide-react';
+import { generateQRCodeDataURL, getOfficialTrackingUrl } from '../lib/pdfReceipt';
 import { CivicIssue } from '../lib/types';
+
 
 interface ReceiptCardProps {
   issue: CivicIssue;
@@ -11,24 +12,30 @@ interface ReceiptCardProps {
 
 export default function ReceiptCard({ issue }: ReceiptCardProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [trackingUrl, setTrackingUrl] = useState<string>('');
+  const [copiedUrl, setCopiedUrl] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Generate QR code pointing to ticket tracking page URL
-    const trackingUrl = typeof window !== 'undefined'
-      ? `${window.location.origin}/track/${issue.complaint_number}`
-      : `https://civictrack.org/track/${issue.complaint_number}`;
+    // Generate clean, error-corrected high-precision QR code
+    const url = getOfficialTrackingUrl(issue.complaint_number);
+    setTrackingUrl(url);
 
-    QRCode.toDataURL(trackingUrl, {
-      width: 140,
-      margin: 1,
-      color: {
-        dark: '#0f172a',
-        light: '#ffffff',
-      },
-    }).then((url: string) => setQrDataUrl(url));
+    generateQRCodeDataURL(url).then((qrUrl: string) => {
+      setQrDataUrl(qrUrl);
+    });
   }, [issue.complaint_number]);
+
+  const handleCopyUrl = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(trackingUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2500);
+    }
+  };
+
 
   const handleDownloadPdf = async () => {
     setIsGeneratingPdf(true);
@@ -135,24 +142,46 @@ export default function ReceiptCard({ issue }: ReceiptCardProps) {
         </div>
 
         {/* Bottom Verification Seal & QR Code */}
-        <div className="pt-4 border-t border-dashed border-[#C9C4BA] flex items-center justify-between">
-          <div className="space-y-1">
+        <div className="pt-4 border-t border-dashed border-[#C9C4BA] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="space-y-1.5 min-w-0 flex-1">
             <div className="flex items-center space-x-1.5 text-[#176B3A] font-bold text-xs">
-              <CheckCircle className="w-4 h-4 text-[#176B3A]" />
+              <CheckCircle className="w-4 h-4 text-[#176B3A] shrink-0" />
               <span>Immutable Ticket Registered</span>
             </div>
-            <p className="text-[10px] text-[#6B6860] max-w-[200px] leading-tight">
-              Scan QR code on any mobile camera to verify live ticket status and timeline.
+            <p className="text-[10px] text-[#6B6860] leading-tight">
+              Scan QR code on any mobile camera or Google Lens to open the live ticket status & timeline.
             </p>
+            {trackingUrl && (
+              <div className="flex items-center space-x-2 pt-1">
+                <a
+                  href={trackingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-mono-data font-bold text-[#1A56A4] hover:underline truncate max-w-[220px]"
+                  title={trackingUrl}
+                >
+                  {trackingUrl}
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCopyUrl}
+                  className="p-1 rounded bg-[#E8E5DF] hover:bg-[#C9C4BA] text-[#1E2328] transition-colors shrink-0"
+                  title="Copy verification link"
+                >
+                  {copiedUrl ? <Check className="w-3 h-3 text-[#176B3A]" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            )}
           </div>
 
           {qrDataUrl && (
-            <div className="p-1.5 bg-white border border-[#C9C4BA] rounded-xl shadow-md">
+            <div className="p-1.5 bg-white border-2 border-[#1E2328]/20 rounded-xl shadow-md shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrDataUrl} alt="Ticket QR" className="w-20 h-20" />
+              <img src={qrDataUrl} alt={`QR Code for ${issue.complaint_number}`} className="w-20 h-20" />
             </div>
           )}
         </div>
+
       </div>
 
       {/* PDF Download Button */}

@@ -1,13 +1,21 @@
 import QRCode from 'qrcode';
-import { CivicIssue } from './types';
+
+export function getOfficialTrackingUrl(complaintNumber: string): string {
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3003');
+  return `${baseUrl.replace(/\/$/, '')}/track/${encodeURIComponent(complaintNumber)}`;
+}
 
 export async function generateQRCodeDataURL(text: string): Promise<string> {
   try {
     return await QRCode.toDataURL(text, {
       margin: 1,
-      width: 160,
+      width: 180,
+      errorCorrectionLevel: 'H',
       color: {
-        dark: '#0f172a',
+        dark: '#1E2328',
         light: '#ffffff',
       },
     });
@@ -16,6 +24,7 @@ export async function generateQRCodeDataURL(text: string): Promise<string> {
     return '';
   }
 }
+
 
 // Function to trigger client-side printing or PDF export of the receipt element
 export async function downloadReceiptPDF(elementId: string, complaintNumber: string) {
