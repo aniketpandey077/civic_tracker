@@ -184,18 +184,69 @@ export function addIssue(issue: CivicIssue): CivicIssue {
   return issue;
 }
 
-export function getIssueByIdOrNumber(idOrNumber: string): CivicIssue | undefined {
-  const issues = getStoredIssues();
-  return issues.find(i => i.id === idOrNumber || i.complaint_number.toLowerCase() === idOrNumber.toLowerCase());
+export function getUserUpvotedIssues(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem('civic_user_upvoted_ids');
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
 }
 
-export function upvoteIssue(issueId: string): { success: boolean; issue?: CivicIssue; compressed?: boolean } {
+export function setUserUpvotedIssue(issueId: string, hasVoted: boolean) {
+  if (typeof window === 'undefined') return;
+  try {
+    const list = new Set(getUserUpvotedIssues());
+    if (hasVoted) {
+      list.add(issueId);
+    } else {
+      list.delete(issueId);
+    }
+    localStorage.setItem('civic_user_upvoted_ids', JSON.stringify(Array.from(list)));
+  } catch {}
+}
+
+export function getIssueByIdOrNumber(idOrNumber: string): CivicIssue | undefined {
   const issues = getStoredIssues();
-  const index = issues.findIndex(i => i.id === issueId);
+  const upvotedIds = getUserUpvotedIssues();
+  const issue = issues.find(i => i.id === idOrNumber || i.complaint_number.toLowerCase() === idOrNumber.toLowerCase());
+  if (issue) {
+    return {
+      ...issue,
+      has_upvoted: upvotedIds.includes(issue.id) || issue.has_upvoted,
+    };
+  }
+  return undefined;
+}
+
+export function upvoteIssue(issueId: string): { success: boolean; issue?: CivicIssue; compressed?: boolean; unvoted?: boolean } {
+  const issues = getStoredIssues();
+  const index = issues.findIndex(i => i.id === issueId || i.complaint_number === issueId);
   if (index === -1) return { success: false };
 
   const current = issues[index];
+  const upvotedIds = getUserUpvotedIssues();
+  const alreadyVoted = upvotedIds.includes(current.id) || current.has_upvoted;
+
+  // STRICT 1-VOTE LIMIT: If already voted, toggle off (or prevent multiple likes)
+  if (alreadyVoted) {
+    const newCount = Math.max(1, (current.upvote_count || 1) - 1);
+    setUserUpvotedIssue(current.id, false);
+    const updatedIssue: CivicIssue = {
+      ...current,
+      upvote_count: newCount,
+      has_upvoted: false,
+    };
+    issues[index] = updatedIssue;
+    saveStoredIssues(issues);
+    return { success: true, issue: updatedIssue, unvoted: true };
+  }
+
+  // First time voting — increment by 1
   const newCount = (current.upvote_count || 0) + 1;
+  setUserUpvotedIssue(current.id, true);
+
   let compressed = false;
   let deadline = current.deadline_at;
 
@@ -246,9 +297,16 @@ export function attachEvidenceAndUpvote(
   const photos = current.additional_photos || [];
   const updatedPhotos = photoUrl && !photos.includes(photoUrl) ? [...photos, photoUrl] : photos;
 
+  const upvotedIds = getUserUpvotedIssues();
+  const alreadyVoted = upvotedIds.includes(current.id);
+
+  // Add 1 vote only if not already voted
+  const newUpvoteCount = alreadyVoted ? (current.upvote_count || 1) : (current.upvote_count || 1) + 1;
+  setUserUpvotedIssue(current.id, true);
+
   const updated: CivicIssue = {
     ...current,
-    upvote_count: (current.upvote_count || 1) + 1,
+    upvote_count: newUpvoteCount,
     additional_photos: updatedPhotos,
     has_upvoted: true,
   };

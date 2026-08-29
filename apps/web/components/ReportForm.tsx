@@ -181,11 +181,8 @@ export default function ReportForm() {
   };
 
   const handleMergeDuplicate = (targetIssueId: string) => {
-    if (!photoUrl) {
-      setErrorMsg('Please capture or select a photo before upvoting.');
-      return;
-    }
-    const updated = attachEvidenceAndUpvote(targetIssueId, photoUrl, 'Citizen Reporter');
+    const photoToAttach = photoUrl || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80';
+    const updated = attachEvidenceAndUpvote(targetIssueId, photoToAttach, 'Citizen Reporter');
     if (updated) {
       router.push(`/track/${updated.complaint_number || updated.id}?justUpvoted=true`);
     }
@@ -301,15 +298,14 @@ export default function ReportForm() {
             <button
               type="button"
               onClick={() => handleMergeDuplicate(nearbyDuplicate.issue.id)}
-              disabled={!photoUrl}
-              className="px-5 py-2.5 bg-[#D95F02] hover:bg-[#D95F02] disabled:bg-[#C9C4BA] text-slate-950 font-bold rounded-xl shadow-md transition-all flex items-center space-x-2"
+              className="px-5 py-2.5 bg-[#D95F02] hover:bg-[#c05300] text-white font-bold rounded-xl shadow-md transition-all flex items-center space-x-2 cursor-pointer active:scale-95"
             >
               <span>+ Attach Evidence & Upvote #{nearbyDuplicate.issue.complaint_number}</span>
             </button>
             <button
               type="button"
               onClick={() => router.push(`/track/${nearbyDuplicate.issue.complaint_number}`)}
-              className="px-4 py-2.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-slate-800 border border-[#D95F02]/40 font-semibold rounded-xl transition-all"
+              className="px-4 py-2.5 bg-[#E8E5DF] hover:bg-[#C9C4BA] text-slate-800 border border-[#D95F02]/40 font-semibold rounded-xl transition-all cursor-pointer"
             >
               View Ticket Docket
             </button>

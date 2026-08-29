@@ -23,11 +23,13 @@ import NotificationBell from './NotificationBell';
 import { useUserLocation } from '@/lib/useUserLocation';
 import { useAuth } from '@/lib/authContext';
 import LoginModal from './LoginModal';
+import ProfileModal from './ProfileModal';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const userLocation = useUserLocation();
   const { user, isAdmin, signOut } = useAuth();
 
@@ -115,20 +117,29 @@ export default function Navbar() {
 
             <NotificationBell />
 
-            {/* Auth Button — Always Visible in Navbar */}
+            {/* Auth / Profile Button — Always Visible in Navbar */}
             {user ? (
-              <div className="flex items-center space-x-1.5 bg-[#EDFBF0] border border-emerald-400/40 px-2.5 py-1 rounded-lg text-xs text-[#176B3A] font-semibold">
-                <User className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline max-w-[110px] truncate">{user.email?.split('@')[0]}</span>
-                <button
-                  type="button"
-                  onClick={signOut}
-                  className="p-1 text-[#6B6860] hover:text-rose-600 rounded transition-colors ml-1"
-                  title="Sign out"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setProfileOpen(true)}
+                className="flex items-center space-x-2 bg-[#EDFBF0] hover:bg-[#d8f5dc] border border-emerald-400/50 px-3 py-1.5 rounded-xl text-xs text-[#176B3A] font-bold transition-all active:scale-95 shadow-2xs cursor-pointer"
+                title="View Profile & Dockets"
+              >
+                {user.photoURL ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName || 'User'}
+                    className="w-4 h-4 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="w-3.5 h-3.5 text-emerald-700" />
+                )}
+                <span className="hidden sm:inline max-w-[110px] truncate">{user.displayName || user.email?.split('@')[0]}</span>
+                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 bg-emerald-600 text-white rounded">
+                  {isAdmin ? 'ADMIN' : 'CITIZEN'}
+                </span>
+              </button>
             ) : (
               <button
                 type="button"
@@ -193,22 +204,31 @@ export default function Navbar() {
               </Link>
             );
           })}
-          {/* Login/Logout in mobile drawer */}
+          {/* Login/Profile in mobile drawer */}
           {user ? (
-            <button
-              onClick={() => { signOut(); setMobileMenuOpen(false); }}
-              className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out ({user.email?.split('@')[0]})</span>
-            </button>
+            <div className="space-y-1 pt-1 border-t border-slate-100">
+              <button
+                onClick={() => { setProfileOpen(true); setMobileMenuOpen(false); }}
+                className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+              >
+                <User className="w-4 h-4" />
+                <span>View Profile ({user.displayName || user.email?.split('@')[0]})</span>
+              </button>
+              <button
+                onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => { setLoginOpen(true); setMobileMenuOpen(false); }}
               className="flex items-center space-x-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-[#1A56A4] hover:bg-[#EEF4FF] transition-colors"
             >
               <LogIn className="w-4 h-4" />
-              <span>Citizen Login</span>
+              <span>Sign In with Google</span>
             </button>
           )}
         </div>
@@ -216,6 +236,9 @@ export default function Navbar() {
 
       {/* Login Modal */}
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+
+      {/* Profile Modal */}
+      <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </header>
   );
 }

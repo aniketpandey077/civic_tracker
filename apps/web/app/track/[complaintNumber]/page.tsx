@@ -138,8 +138,14 @@ export default function TrackComplaintPage() {
     const result = upvoteIssue(issue.id);
     if (result.success && result.issue) {
       setIssue(result.issue);
-      if (result.compressed) {
+      if (result.unvoted) {
+        setUpvoteBanner('🗳️ Upvote removed.');
+        setTimeout(() => setUpvoteBanner(null), 2500);
+      } else if (result.compressed) {
         setUpvoteBanner('⚡ 500 UPVOTES REACHED! Resolution target compressed to 5 days under CivicTrack Accountability Rule.');
+      } else {
+        setUpvoteBanner('🗳️ 1 Vote Recorded: You upvoted this civic docket.');
+        setTimeout(() => setUpvoteBanner(null), 3000);
       }
     }
   };
@@ -296,10 +302,14 @@ export default function TrackComplaintPage() {
           <div className="flex items-center space-x-3">
             <button
               onClick={handleUpvoteClick}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+              className={`px-4 py-2 font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer ${
+                issue.has_upvoted
+                  ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300 shadow-md'
+                  : 'bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-400/40'
+              }`}
             >
-              <ThumbsUp className="w-4 h-4 text-slate-950" />
-              <span>Upvote Defect Ticket ({issue.upvote_count})</span>
+              <ThumbsUp className={`w-4 h-4 ${issue.has_upvoted ? 'fill-current' : ''}`} />
+              <span>{issue.has_upvoted ? 'Upvoted' : 'Upvote Ticket'} ({issue.upvote_count})</span>
             </button>
 
             {!isResolved && (
