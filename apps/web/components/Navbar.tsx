@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   LogIn,
   LogOut,
-  User
+  User,
+  ShieldAlert
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { useUserLocation } from '@/lib/useUserLocation';
@@ -34,7 +35,7 @@ export default function Navbar() {
     { href: '/map', label: 'GIS Map', icon: Map },
     { href: '/my-complaints', label: 'Docket Registry', icon: FileText },
     { href: '/dashboard', label: 'SLA Board', icon: BarChart3 },
-    { href: '/department', label: 'Dept Dispatch', icon: Building2, tag: 'Demo' },
+    { href: '/admin', label: 'Admin Command', icon: ShieldAlert, tag: 'Admin' },
   ];
 
   return (

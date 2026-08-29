@@ -260,3 +260,118 @@ export async function fetchBudgetData(): Promise<ZoneBudgetData[]> {
     department: row.admin_zones?.department ?? '',
   })) as ZoneBudgetData[];
 }
+
+// ─── ADMIN GOVERNANCE CONTROLS ───────────────────────────────────────────────
+
+/** Admin: Update ticket status + log official audit note in issue_status_history */
+export async function adminUpdateIssueStatus(
+  issueId: string,
+  newStatus: string,
+  note: string,
+  changedBy: string = 'Municipal Administrator'
+): Promise<{ success: boolean; error?: string }> {
+  const updatePayload: Record<string, any> = { status: newStatus };
+  if (newStatus === 'resolved') {
+    updatePayload.resolved_at = new Date().toISOString();
+  }
+
+  const { error: updateError } = await supabase
+    .from('civic_issues')
+    .update(updatePayload)
+    .eq('id', issueId);
+
+  if (updateError) {
+    console.error('[admin] update status error:', updateError.message);
+    return { success: false, error: updateError.message };
+  }
+
+  // Insert status history entry
+  await supabase.from('issue_status_history').insert({
+    issue_id: issueId,
+    new_status: newStatus,
+    changed_by: changedBy,
+    department_note: note || `Status updated to ${newStatus.toUpperCase()} by ${changedBy}`,
+  });
+
+  return { success: true };
+}
+
+/** Admin: Modify ticket SLA, department, or severity */
+export async function adminUpdateIssueDetails(
+  issueId: string,
+  updates: Record<string, any>
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('civic_issues')
+    .update(updates)
+    .eq('id', issueId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
+/** Admin: Purge / Delete a bogus or invalid docket */
+export async function adminDeleteIssue(issueId: string): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('civic_issues')
+    .delete()
+    .eq('id', issueId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
+/** Admin: Upload official contractor resolution proof */
+export async function adminSubmitEvidence(
+  issueId: string,
+  beforePhotoUrl: string,
+  afterPhotoUrl: string,
+  description: string,
+  contractorName: string = 'Municipal Contractor'
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase.from('resolution_evidence').insert({
+    issue_id: issueId,
+    before_photo_url: beforePhotoUrl,
+    after_photo_url: afterPhotoUrl,
+    description: description || 'Official contractor repair completion photo evidence.',
+    submitted_by: contractorName,
+    verification_status: 'pending',
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  // Automatically transition status to verified
+  await adminUpdateIssueStatus(
+    issueId,
+    'verified',
+    `Contractor proof uploaded by ${contractorName}. Ready for citizen verification.`
+  );
+
+  return { success: true };
+}
+
+/** Admin: Broadcast emergency alert */
+export async function adminBroadcastNotification(
+  title: string,
+  message: string,
+  type: string = 'deadline_warning'
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase.from('notifications').insert({
+    type,
+    title,
+    message,
+    read: false,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
