@@ -160,11 +160,12 @@ export default function MyComplaintsPage() {
   };
 
   const handleClearLocalCache = () => {
-    if (confirm('Clear local browser test cache? This removes temporary test cards and re-syncs fresh from Firebase.')) {
-      localStorage.removeItem('civictrack_issues');
-      localStorage.removeItem('civic_user_filed_complaints');
-      localStorage.removeItem('civictrack_status_history');
-      localStorage.removeItem('civictrack_evidence');
+    if (confirm('Clear local browser test cache? This removes all temporary test cards and re-syncs fresh from Firebase.')) {
+      localStorage.setItem('civictrack_issues', '[]');
+      localStorage.setItem('civic_user_filed_complaints', '[]');
+      localStorage.setItem('civictrack_status_history', '[]');
+      localStorage.setItem('civictrack_evidence', '[]');
+      localStorage.setItem('civic_user_upvoted_ids', '[]');
       window.location.reload();
     }
   };
