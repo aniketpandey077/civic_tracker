@@ -16,17 +16,21 @@ import {
   PlusCircle,
   Camera,
   Navigation,
-  ShieldAlert
+  ShieldAlert,
+  Wrench
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue } from '@/lib/store';
 import { CivicIssue } from '@/lib/types';
 import { useUserLocation } from '@/lib/useUserLocation';
 import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
+import EvidenceModal from '@/components/EvidenceModal';
 
 export default function MyComplaintsPage() {
   const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedIssueForEvidence, setSelectedIssueForEvidence] = useState<CivicIssue | null>(null);
+
   const userLocation = useUserLocation();
 
   const loadIssues = () => {
@@ -35,6 +39,20 @@ export default function MyComplaintsPage() {
 
   useEffect(() => {
     loadIssues();
+
+    const handleStoreUpdate = () => {
+      loadIssues();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('civictrack_store_updated', handleStoreUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('civictrack_store_updated', handleStoreUpdate);
+      }
+    };
   }, []);
 
   const handleUpvote = (id: string, e: React.MouseEvent) => {
@@ -132,9 +150,8 @@ export default function MyComplaintsPage() {
           const isOverdue = !isResolved && diffDays <= 0;
 
           return (
-            <Link
+            <div
               key={issue.id}
-              href={`/track/${issue.complaint_number}`}
               className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4 relative"
             >
               <div className="space-y-3">
@@ -186,9 +203,11 @@ export default function MyComplaintsPage() {
                     />
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
-                    <h3 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
-                      {issue.title}
-                    </h3>
+                    <Link href={`/track/${issue.complaint_number}`}>
+                      <h3 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug hover:text-emerald-700 transition-colors">
+                        {issue.title}
+                      </h3>
+                    </Link>
                     <p className="text-[11px] text-slate-500 line-clamp-1">{issue.description}</p>
                     <div className="text-[10px] text-slate-400 flex items-center space-x-1">
                       <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -198,38 +217,49 @@ export default function MyComplaintsPage() {
                 </div>
               </div>
 
-              {/* Card Footer: SLA & Upvote */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-1 text-slate-500 text-[11px]">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {isResolved ? (
-                    <span className="text-emerald-600 font-bold">Verified Done</span>
-                  ) : isOverdue ? (
-                    <span className="text-rose-600 font-bold">{Math.abs(diffDays)}d overdue</span>
-                  ) : (
-                    <span>{diffDays}d remaining</span>
-                  )}
-                </div>
+              {/* Card Footer: SLA, Fix Defect & Upvote */}
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedIssueForEvidence(issue)}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>🛠️ Fix Defect</span>
+                </button>
 
                 <div className="flex items-center space-x-2">
                   <button
                     type="button"
                     onClick={(e) => handleUpvote(issue.id, e)}
-                    className="flex items-center space-x-1 text-slate-600 hover:text-emerald-600 bg-slate-50 hover:bg-emerald-50 px-2 py-0.5 rounded border border-slate-200 transition-colors"
+                    className="flex items-center space-x-1 text-slate-600 hover:text-emerald-600 bg-slate-50 hover:bg-emerald-50 px-2 py-1 rounded border border-slate-200 transition-colors"
                   >
                     <ThumbsUp className="w-3 h-3" />
                     <span className="font-bold text-[11px]">{issue.upvote_count}</span>
                   </button>
 
-                  <span className="text-emerald-600 font-bold text-xs flex items-center">
+                  <Link
+                    href={`/track/${issue.complaint_number}`}
+                    className="text-emerald-600 font-bold text-xs flex items-center hover:underline"
+                  >
                     Track <ArrowRight className="w-3 h-3 ml-0.5" />
-                  </span>
+                  </Link>
                 </div>
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>
+
+      {/* Modal for Fix Defect / Upload Repair Photo */}
+      {selectedIssueForEvidence && (
+        <EvidenceModal
+          issue={selectedIssueForEvidence}
+          isOpen={!!selectedIssueForEvidence}
+          onClose={() => setSelectedIssueForEvidence(null)}
+          onSubmitted={loadIssues}
+        />
+      )}
     </div>
   );
 }
