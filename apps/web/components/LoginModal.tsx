@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mail, KeyRound, LogIn, Loader2, CheckCircle, X, Shield } from 'lucide-react';
+import { Mail, KeyRound, LogIn, Loader2, CheckCircle, X, Shield, Lock, UserCheck, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../lib/authContext';
 
 interface LoginModalProps {
@@ -9,13 +9,16 @@ interface LoginModalProps {
   onClose: () => void;
 }
 
-type Step = 'email' | 'otp' | 'success';
+type AuthMode = 'otp' | 'password' | 'signup';
+type Step = 'input' | 'otp_verify' | 'success';
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { signInWithEmail, signInWithGoogle, verifyOtp } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInWithPassword, signUpWithPassword, verifyOtp } = useAuth();
 
-  const [step, setStep] = useState<Step>('email');
+  const [authMode, setAuthMode] = useState<AuthMode>('otp');
+  const [step, setStep] = useState<Step>('input');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -23,6 +26,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   if (!isOpen) return null;
 
+  // Google OAuth Login
   const handleGoogleLogin = async () => {
     setError(null);
     setGoogleLoading(true);
@@ -33,6 +37,32 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   };
 
+  // Demo Quick-Login (Instant Citizen / Admin)
+  const handleDemoLogin = async (demoEmail: string) => {
+    setError(null);
+    setLoading(true);
+    // Try sign in with default demo password, or sign up if new
+    let res = await signInWithPassword(demoEmail, 'CivicTrack@2026');
+    if (res.error && res.error.includes('Invalid login credentials')) {
+      res = await signUpWithPassword(demoEmail, 'CivicTrack@2026');
+    }
+    setLoading(false);
+
+    if (res.error) {
+      // Fallback: send OTP to demo email
+      setEmail(demoEmail);
+      await signInWithEmail(demoEmail);
+      setStep('otp_verify');
+    } else {
+      setStep('success');
+      setTimeout(() => {
+        onClose();
+        resetState();
+      }, 1500);
+    }
+  };
+
+  // Send Email OTP Code
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
@@ -45,10 +75,37 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     if (err) {
       setError(err);
     } else {
-      setStep('otp');
+      setStep('otp_verify');
     }
   };
 
+  // Password Login or Sign Up
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+    setError(null);
+    setLoading(true);
+
+    let res;
+    if (authMode === 'signup') {
+      res = await signUpWithPassword(email.trim().toLowerCase(), password);
+    } else {
+      res = await signInWithPassword(email.trim().toLowerCase(), password);
+    }
+    setLoading(false);
+
+    if (res.error) {
+      setError(res.error);
+    } else {
+      setStep('success');
+      setTimeout(() => {
+        onClose();
+        resetState();
+      }, 1500);
+    }
+  };
+
+  // Verify 6-digit OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp.trim()) return;
@@ -59,38 +116,40 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setLoading(false);
 
     if (err) {
-      setError('Invalid or expired code. Please try again.');
+      setError(err || 'Invalid or expired code. Please try again.');
     } else {
       setStep('success');
       setTimeout(() => {
         onClose();
-        setStep('email');
-        setEmail('');
-        setOtp('');
-      }, 1800);
+        resetState();
+      }, 1500);
     }
+  };
+
+  const resetState = () => {
+    setStep('input');
+    setEmail('');
+    setPassword('');
+    setOtp('');
+    setError(null);
+    setAuthMode('otp');
   };
 
   const handleClose = () => {
     onClose();
-    setTimeout(() => {
-      setStep('email');
-      setEmail('');
-      setOtp('');
-      setError(null);
-    }, 300);
+    setTimeout(resetState, 300);
   };
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs"
         onClick={handleClose}
       />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+      {/* Modal Card */}
+      <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
 
         {/* Header */}
         <div className="bg-gradient-to-br from-[#1A56A4] to-[#176B3A] p-6 text-white relative">
@@ -106,7 +165,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-extrabold tracking-tight">Citizen Login</h2>
+              <h2 className="text-lg font-extrabold tracking-tight">Citizen Authentication</h2>
               <p className="text-xs text-white/80 mt-0.5">CivicTrack — Punjab Municipal System</p>
             </div>
           </div>
@@ -114,15 +173,181 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
         <div className="p-6 space-y-4">
 
-          {/* STEP 1: Auth Options (Google + Email) */}
-          {step === 'email' && (
+          {/* STEP 1: Main Login Form */}
+          {step === 'input' && (
             <div className="space-y-4">
+
+              {/* Mode Toggle Tabs */}
+              <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('otp'); setError(null); }}
+                  className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    authMode === 'otp' ? 'bg-white text-[#1A56A4] shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  Email OTP Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('password'); setError(null); }}
+                  className={`flex-1 py-1.5 rounded-lg transition-all ${
+                    authMode === 'password' || authMode === 'signup'
+                      ? 'bg-white text-[#1A56A4] shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  Password
+                </button>
+              </div>
+
+              {/* Quick Demo Access Bar */}
+              <div className="bg-gradient-to-r from-amber-50 to-blue-50 border border-amber-200/60 p-3 rounded-2xl space-y-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-600" />
+                  Instant Demo Access (One-Click)
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin('citizen.demo@punjab.gov.in')}
+                    disabled={loading}
+                    className="flex items-center justify-center space-x-1.5 py-1.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 shadow-2xs transition-all active:scale-95"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Citizen Demo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin('admin.lmc@punjab.gov.in')}
+                    disabled={loading}
+                    className="flex items-center justify-center space-x-1.5 py-1.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 shadow-2xs transition-all active:scale-95"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-[#1A56A4]" />
+                    <span>Admin Demo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* OPTION A: Email OTP Form */}
+              {authMode === 'otp' && (
+                <form onSubmit={handleSendOtp} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Your Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="citizen@punjab.gov.in"
+                        required
+                        className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] focus:ring-2 focus:ring-[#1A56A4]/20 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <p className="text-xs text-rose-500 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                      {error}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading || !email}
+                    className="w-full flex items-center justify-center space-x-2 bg-[#1A56A4] hover:bg-[#134688] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+                    <span>{loading ? 'Sending code...' : 'Send 6-Digit Login Code'}</span>
+                  </button>
+                </form>
+              )}
+
+              {/* OPTION B: Password Form */}
+              {(authMode === 'password' || authMode === 'signup') && (
+                <form onSubmit={handlePasswordSubmit} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] bg-slate-50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                        className="w-full pl-10 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] bg-slate-50"
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <p className="text-xs text-rose-500 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                      {error}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading || !email || !password}
+                    className="w-full flex items-center justify-center space-x-2 bg-[#176B3A] hover:bg-[#145730] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                    <span>{loading ? 'Processing...' : authMode === 'signup' ? 'Create Account' : 'Sign In'}</span>
+                  </button>
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode(authMode === 'signup' ? 'password' : 'signup');
+                        setError(null);
+                      }}
+                      className="text-[11px] text-[#1A56A4] font-semibold hover:underline"
+                    >
+                      {authMode === 'signup' ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Divider */}
+              <div className="flex items-center space-x-3 text-slate-400">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Or continue with</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
               {/* Google OAuth Button */}
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={googleLoading || loading}
-                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2.5 px-4 rounded-xl border-2 border-slate-200 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-slate-50 text-slate-700 font-bold py-2 px-4 rounded-xl border border-slate-200 shadow-2xs transition-all active:scale-95 disabled:opacity-50"
               >
                 {googleLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin text-[#1A56A4]" />
@@ -147,63 +372,18 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   </svg>
                 )}
                 <span className="text-xs">
-                  {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+                  {googleLoading ? 'Connecting to Google...' : 'Google Account'}
                 </span>
               </button>
 
-              {/* Divider */}
-              <div className="flex items-center space-x-3 text-slate-400">
-                <div className="flex-1 h-px bg-slate-200" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">or with email OTP</span>
-                <div className="flex-1 h-px bg-slate-200" />
-              </div>
-
-              {/* Email Form */}
-              <form onSubmit={handleSendOtp} className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] focus:ring-2 focus:ring-[#1A56A4]/20 bg-slate-50"
-                    />
-                  </div>
-                </div>
-
-                {error && (
-                  <p className="text-xs text-rose-500 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                    {error}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || !email}
-                  className="w-full flex items-center justify-center space-x-2 bg-[#1A56A4] hover:bg-[#134688] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
-                  <span>{loading ? 'Sending code...' : 'Send Login Code'}</span>
-                </button>
-              </form>
-
-              <p className="text-center text-[10px] text-slate-400 leading-tight">
-                Secure citizen authentication protected by Supabase Encryption.
-              </p>
             </div>
           )}
 
-          {/* STEP 2: OTP Verification */}
-          {step === 'otp' && (
+          {/* STEP 2: OTP Verification Code */}
+          {step === 'otp_verify' && (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
-                📧 Code sent to <strong>{email}</strong>. Check your inbox (and spam folder).
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-2.5 text-xs text-blue-800">
+                📧 6-digit code sent to <strong>{email}</strong>. Check your inbox & spam folder.
               </div>
 
               <div className="space-y-1.5">
@@ -221,7 +401,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     autoFocus
                     maxLength={6}
                     inputMode="numeric"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm font-mono tracking-[0.3em] border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] focus:ring-2 focus:ring-[#1A56A4]/20 bg-slate-50 text-center text-lg"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm font-mono tracking-[0.3em] border border-slate-200 rounded-xl focus:outline-none focus:border-[#1A56A4] focus:ring-2 focus:ring-[#1A56A4]/20 bg-slate-50 text-center font-bold"
                   />
                 </div>
               </div>
@@ -235,33 +415,33 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <button
                 type="submit"
                 disabled={loading || otp.length < 6}
-                className="w-full flex items-center justify-center space-x-2 bg-[#176B3A] hover:bg-[#145730] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center space-x-2 bg-[#176B3A] hover:bg-[#145730] text-white font-bold py-2.5 rounded-xl transition-all disabled:opacity-50 text-xs shadow-sm active:scale-95"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                <span>{loading ? 'Verifying...' : 'Verify & Login'}</span>
+                <span>{loading ? 'Verifying...' : 'Verify & Sign In'}</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => { setStep('email'); setError(null); setOtp(''); }}
-                className="w-full text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2"
+                onClick={() => { setStep('input'); setError(null); setOtp(''); }}
+                className="w-full text-center text-xs text-slate-500 hover:text-slate-800 underline underline-offset-2"
               >
-                ← Use a different email
+                ← Back / Use another method
               </button>
             </form>
           )}
 
-          {/* STEP 3: Success */}
+          {/* STEP 3: Success Confirmation */}
           {step === 'success' && (
-            <div className="text-center py-4 space-y-3">
+            <div className="text-center py-5 space-y-3">
               <div className="flex justify-center">
-                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
+                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
                   <CheckCircle className="w-8 h-8 text-emerald-600" />
                 </div>
               </div>
               <div>
-                <h3 className="font-extrabold text-slate-900 text-lg">Logged In!</h3>
-                <p className="text-sm text-slate-500 mt-1">Welcome to CivicTrack Punjab 🌾</p>
+                <h3 className="font-black text-slate-900 text-lg">Authenticated!</h3>
+                <p className="text-xs text-slate-500 mt-1">Logged into CivicTrack Punjab System 🌾</p>
               </div>
             </div>
           )}

@@ -10,6 +10,8 @@ interface AuthContextType {
   loading: boolean;
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -44,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: undefined, // OTP mode, not magic link
+        emailRedirectTo: undefined,
       },
     });
     return { error: error?.message ?? null };
@@ -65,12 +67,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const signUpWithPassword = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
   const verifyOtp = useCallback(async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
+    // Try email type
+    let { error } = await supabase.auth.verifyOtp({
       email,
       token,
       type: 'email',
     });
+
+    // If failed, try signup type
+    if (error) {
+      const res2 = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup',
+      });
+      error = res2.error;
+    }
+
     return { error: error?.message ?? null };
   }, []);
 
@@ -79,7 +109,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithEmail, signInWithGoogle, verifyOtp, signOut }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
+      signInWithEmail,
+      signInWithGoogle,
+      signInWithPassword,
+      signUpWithPassword,
+      verifyOtp,
+      signOut
+    }}>
       {children}
     </AuthContext.Provider>
   );
