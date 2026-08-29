@@ -103,10 +103,10 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="flex items-center space-x-2">
-            {/* Mobile compact button — plain Link, no wrapper */}
+            {/* Report CTA (Mobile) */}
             <Link
               href="/report"
-              className="md:hidden flex items-center space-x-1.5 px-3 py-2 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-extrabold rounded-xl shadow-md animate-pulse hover:animate-none transition-all"
+              className="sm:hidden flex items-center space-x-1 px-2.5 py-1.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white text-xs font-bold rounded-lg shadow-sm"
             >
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>Report</span>
@@ -114,31 +114,32 @@ export default function Navbar() {
 
             <NotificationBell />
 
-            {/* Auth Button — desktop */}
+            {/* Auth Button — Always Visible in Navbar */}
             {user ? (
-              <div className="hidden md:flex items-center space-x-2">
-                <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#EDFBF0] border border-emerald-400/40 rounded-lg text-xs text-[#176B3A] font-semibold">
-                  <User className="w-3.5 h-3.5" />
-                  <span className="max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
-                </div>
+              <div className="flex items-center space-x-1.5 bg-[#EDFBF0] border border-emerald-400/40 px-2.5 py-1 rounded-lg text-xs text-[#176B3A] font-semibold">
+                <User className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline max-w-[110px] truncate">{user.email?.split('@')[0]}</span>
                 <button
+                  type="button"
                   onClick={signOut}
-                  className="p-2 text-[#6B6860] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                  className="p-1 text-[#6B6860] hover:text-rose-600 rounded transition-colors ml-1"
                   title="Sign out"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => setLoginOpen(true)}
-                className="hidden md:flex items-center space-x-1.5 px-3.5 py-2 bg-[#1A56A4] hover:bg-[#134688] text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#1A56A4] hover:bg-[#134688] text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95"
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>Citizen Login</span>
+                <span>Login</span>
               </button>
             )}
 
+            {/* Mobile Hamburger Toggle */}
             <div className="md:hidden">
               <button
                 type="button"
