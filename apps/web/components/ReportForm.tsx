@@ -12,6 +12,7 @@ import { createIssue } from '../lib/db';
 
 import { IssueCategory, CivicIssue } from '../lib/types';
 import { findNearbyExistingIssue, NearbyIssueMatch } from '../lib/geoDistance';
+import { useAuth } from '../lib/authContext';
 
 const CATEGORIES: { id: IssueCategory; label: string; code: string; defaultDesc: string }[] = [
   { id: 'pothole', label: 'Pothole & Road Cavity', code: 'RD-POT', defaultDesc: 'Hazardous asphalt road pothole causing vehicle traffic slowdown and safety risk.' },
@@ -29,6 +30,7 @@ const CATEGORIES: { id: IssueCategory; label: string; code: string; defaultDesc:
 
 export default function ReportForm() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [category, setCategory] = useState<IssueCategory>('pothole');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -221,7 +223,7 @@ export default function ReportForm() {
       const newIssue: CivicIssue = {
         id: `issue-${Date.now()}`,
         complaint_number: complaintNumber,
-        reporter_name: 'Citizen Reporter',
+        reporter_name: user?.displayName || user?.email?.split('@')[0] || 'Verified Citizen',
         zone_id: `zone-${Date.now()}`,
         zone_name: zoneName,
         department: deptName,
