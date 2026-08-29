@@ -306,39 +306,6 @@ export default function EvidenceModal({
           </div>
         </div>
 
-        {/* DIRECT PHOTO UPLOAD (NO URL INPUT) */}
-        <div className="space-y-2">
-          <label className="block text-xs font-bold text-slate-700 uppercase">
-            Upload Solved Repair Photo <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handlePhotoUpload}
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-2xl shadow-sm transition-all active:scale-95 cursor-pointer"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Choose / Upload Photo</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl border border-slate-200 transition-all active:scale-95 cursor-pointer"
-            >
-              <Camera className="w-4 h-4 text-[#1A56A4]" />
-              <span>Capture with Camera</span>
-            </button>
-          </div>
-        </div>
-
         {/* Form Details */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
@@ -349,10 +316,43 @@ export default function EvidenceModal({
               type="text"
               value={contractorName}
               onChange={(e) => setContractorName(e.target.value)}
-              placeholder="e.g. Sharma Infra Contractors"
+              placeholder="e.g. Sharma Infra Contractors (Ayush Sharma)"
               className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:border-[#1A56A4] focus:bg-white text-slate-900 font-bold outline-none"
               required
             />
+          </div>
+
+          {/* DIRECT PHOTO UPLOAD (NO URL INPUT) */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase">
+              Upload Solved Repair Photo <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoUpload}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-2xl shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Choose / Upload Photo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center justify-center space-x-2 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl border border-slate-200 transition-all active:scale-95 cursor-pointer"
+              >
+                <Camera className="w-4 h-4 text-[#1A56A4]" />
+                <span>Capture with Camera</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1">
