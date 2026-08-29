@@ -16,11 +16,13 @@ import {
   RefreshCw,
   SwitchCamera,
   Sparkles,
-  CameraOff
+  CameraOff,
+  LogIn
 } from 'lucide-react';
 import { CivicIssue, ResolutionEvidence } from '../lib/types';
 import { submitResolutionEvidence } from '../lib/store';
 import { adminSubmitEvidence } from '../lib/db';
+import { useAuth } from '../lib/authContext';
 
 interface EvidenceModalProps {
   issue: CivicIssue;
@@ -53,8 +55,10 @@ export default function EvidenceModal({
   onClose,
   onSubmitted,
 }: EvidenceModalProps) {
+  const { user, signInWithGoogle } = useAuth();
+
   const [contractorName, setContractorName] = useState(
-    existingEvidence?.contractor_name || ''
+    existingEvidence?.contractor_name || user?.displayName || user?.email?.split('@')[0] || ''
   );
   const [afterPhotoUrl, setAfterPhotoUrl] = useState(
     existingEvidence?.after_photo_url || ''
@@ -203,6 +207,49 @@ export default function EvidenceModal({
   };
 
   if (!isOpen) return null;
+
+  // MANDATORY AUTHENTICATION: Non-logged-in users cannot resolve grievances
+  if (!user) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs font-sans">
+        <div className="bg-white dark:bg-[#151C2C] text-slate-900 dark:text-slate-100 max-w-md w-full p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl relative space-y-6 text-center animate-in zoom-in-95">
+          <button
+            onClick={onClose}
+            className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-[#1A56A4] text-white flex items-center justify-center mx-auto shadow-xl">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-700">
+              Authentication Mandatory
+            </span>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+              Sign In to Submit Resolution Proof
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Solving municipal grievances and uploading field repair evidence requires verified Google login to log contractor identity and seal the official docket.
+            </p>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={signInWithGoogle}
+              className="w-full flex items-center justify-center space-x-2.5 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-2xl shadow-lg transition-all active:scale-95 cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Continue with Google to Resolve</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Handle Photo Upload (File picker)
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
