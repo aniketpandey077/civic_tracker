@@ -13,7 +13,7 @@ type AuthMode = 'otp' | 'password' | 'signup';
 type Step = 'input' | 'otp_verify' | 'success';
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { signInWithEmail, signInWithGoogle, signInWithPassword, signUpWithPassword, verifyOtp } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInWithPassword, signUpWithPassword, signInAsDemo, verifyOtp } = useAuth();
 
   const [authMode, setAuthMode] = useState<AuthMode>('otp');
   const [step, setStep] = useState<Step>('input');
@@ -43,29 +43,17 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   };
 
-  // Demo Quick-Login (Instant Citizen / Admin)
-  const handleDemoLogin = async (demoEmail: string) => {
+  // Demo Quick-Login (Instant 1-Click Citizen / Admin)
+  const handleDemoLogin = async (role: 'citizen' | 'admin') => {
     setError(null);
     setLoading(true);
-    // Try sign in with default demo password, or sign up if new
-    let res = await signInWithPassword(demoEmail, 'CivicTrack@2026');
-    if (res.error && res.error.includes('Invalid login credentials')) {
-      res = await signUpWithPassword(demoEmail, 'CivicTrack@2026');
-    }
+    await signInAsDemo(role);
     setLoading(false);
-
-    if (res.error) {
-      // Fallback: send OTP to demo email
-      setEmail(demoEmail);
-      await signInWithEmail(demoEmail);
-      setStep('otp_verify');
-    } else {
-      setStep('success');
-      setTimeout(() => {
-        onClose();
-        resetState();
-      }, 1500);
-    }
+    setStep('success');
+    setTimeout(() => {
+      onClose();
+      resetState();
+    }, 1200);
   };
 
   // Send Email OTP Code
@@ -216,7 +204,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => handleDemoLogin('citizen.demo@punjab.gov.in')}
+                    onClick={() => handleDemoLogin('citizen')}
                     disabled={loading}
                     className="flex items-center justify-center space-x-1.5 py-1.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 shadow-2xs transition-all active:scale-95"
                   >
@@ -226,7 +214,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                   <button
                     type="button"
-                    onClick={() => handleDemoLogin('admin.lmc@punjab.gov.in')}
+                    onClick={() => handleDemoLogin('admin')}
                     disabled={loading}
                     className="flex items-center justify-center space-x-1.5 py-1.5 px-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 shadow-2xs transition-all active:scale-95"
                   >

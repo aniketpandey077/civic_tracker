@@ -26,6 +26,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: string | null; user?: AppUser }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null; user?: AppUser }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null; user?: AppUser }>;
+  signInAsDemo: (role: 'citizen' | 'admin') => Promise<{ error: string | null; user?: AppUser }>;
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -39,6 +40,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if demo user saved locally
+    if (typeof window !== 'undefined') {
+      const savedDemo = localStorage.getItem('civic_demo_user');
+      if (savedDemo) {
+        try {
+          setUser(JSON.parse(savedDemo));
+          setLoading(false);
+        } catch (e) {}
+      }
+    }
+
     // Listen for Firebase auth state changes in real-time
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       if (fbUser) {
@@ -51,8 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(appUser);
         setFirebaseUser(fbUser);
       } else {
-        setUser(null);
-        setFirebaseUser(null);
+        // If not in demo mode, clear user
+        if (typeof window !== 'undefined' && !localStorage.getItem('civic_demo_user')) {
+          setUser(null);
+          setFirebaseUser(null);
+        }
       }
       setLoading(false);
     });
@@ -133,22 +148,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // 4. Email Link
-  const signInWithEmail = useCallback(async (email: string) => {
-    // For instant demo flow, also try direct sign-in or fallback
-    return { error: null };
+  // 4. Instant Zero-Network-Fail Demo Login (Citizen or Admin)
+  const signInAsDemo = useCallback(async (role: 'citizen' | 'admin') => {
+    const demoEmail = role === 'admin' ? 'admin.lmc@punjab.gov.in' : 'citizen.demo@punjab.gov.in';
+    const demoName = role === 'admin' ? 'Municipal Administrator (Punjab)' : 'Gurpreet Singh (Citizen)';
+    const appUser: AppUser = {
+      id: role === 'admin' ? 'demo-admin-uid-101' : 'demo-citizen-uid-202',
+      email: demoEmail,
+      displayName: demoName,
+      photoURL: null,
+    };
+    setUser(appUser);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('civic_demo_user', JSON.stringify(appUser));
+    }
+    return { error: null, user: appUser };
   }, []);
 
-  // 5. OTP verification
-  const verifyOtp = useCallback(async (email: string, token: string) => {
-    return { error: null };
-  }, []);
-
-  // 6. Sign Out
+  // 5. Sign Out
   const signOut = useCallback(async () => {
-    await firebaseSignOut(auth);
+    try {
+      await firebaseSignOut(auth);
+    } catch (e) {
+      // ignore
+    }
     setUser(null);
     setFirebaseUser(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('civic_demo_user');
+    }
+  }, []);
+
+  const signInWithEmail = useCallback(async (email: string) => {
+    return { error: null };
+  }, []);
+
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    return { error: null };
   }, []);
 
   return (
@@ -160,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithGoogle,
         signInWithPassword,
         signUpWithPassword,
+        signInAsDemo,
         signInWithEmail,
         verifyOtp,
         signOut,
