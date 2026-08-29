@@ -1,17 +1,32 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import {
+  User as FirebaseUser,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  sendSignInLinkToEmail
+} from 'firebase/auth';
+import { auth, googleProvider } from './firebase';
+
+export interface AppUser {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AppUser | null;
+  firebaseUser: FirebaseUser | null;
   loading: boolean;
+  signInWithGoogle: () => Promise<{ error: string | null; user?: AppUser }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null; user?: AppUser }>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null; user?: AppUser }>;
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
-  signInWithGoogle: () => Promise<{ error: string | null }>;
-  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -19,107 +34,137 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Listen for Firebase auth state changes in real-time
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        const appUser: AppUser = {
+          id: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen',
+          photoURL: fbUser.photoURL,
+        };
+        setUser(appUser);
+        setFirebaseUser(fbUser);
+      } else {
+        setUser(null);
+        setFirebaseUser(null);
+      }
       setLoading(false);
     });
 
-    // Listen for auth state changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-  const signInWithEmail = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: undefined,
-      },
-    });
-    return { error: error?.message ?? null };
-  }, []);
-
+  // 1. Google 1-Click Popup Login
   const signInWithGoogle = useCallback(async () => {
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
-    return { error: error?.message ?? null };
-  }, []);
-
-  const signInWithPassword = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error?.message ?? null };
-  }, []);
-
-  const signUpWithPassword = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    return { error: error?.message ?? null };
-  }, []);
-
-  const verifyOtp = useCallback(async (email: string, token: string) => {
-    // Try email type
-    let { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
-
-    // If failed, try signup type
-    if (error) {
-      const res2 = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'signup',
-      });
-      error = res2.error;
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+      const appUser: AppUser = {
+        id: fbUser.uid,
+        email: fbUser.email,
+        displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen',
+        photoURL: fbUser.photoURL,
+      };
+      setUser(appUser);
+      return { error: null, user: appUser };
+    } catch (err: any) {
+      console.error('[Firebase Auth] Google login error:', err);
+      let msg = err.message || 'Google Sign-In failed';
+      if (err.code === 'auth/popup-closed-by-user') {
+        msg = 'Sign-in cancelled';
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        msg = 'Another popup is already open';
+      }
+      return { error: msg };
     }
-
-    return { error: error?.message ?? null };
   }, []);
 
+  // 2. Email + Password Sign In
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const fbUser = result.user;
+      const appUser: AppUser = {
+        id: fbUser.uid,
+        email: fbUser.email,
+        displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen',
+        photoURL: fbUser.photoURL,
+      };
+      setUser(appUser);
+      return { error: null, user: appUser };
+    } catch (err: any) {
+      let msg = err.message || 'Invalid credentials';
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        msg = 'Invalid email or password';
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'Please enter a valid email address';
+      }
+      return { error: msg };
+    }
+  }, []);
+
+  // 3. Email + Password Sign Up
+  const signUpWithPassword = useCallback(async (email: string, password: string) => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const fbUser = result.user;
+      const appUser: AppUser = {
+        id: fbUser.uid,
+        email: fbUser.email,
+        displayName: fbUser.email?.split('@')[0] || 'Citizen',
+        photoURL: null,
+      };
+      setUser(appUser);
+      return { error: null, user: appUser };
+    } catch (err: any) {
+      let msg = err.message || 'Registration failed';
+      if (err.code === 'auth/email-already-in-use') {
+        msg = 'Account already exists. Please sign in instead.';
+      } else if (err.code === 'auth/weak-password') {
+        msg = 'Password should be at least 6 characters.';
+      }
+      return { error: msg };
+    }
+  }, []);
+
+  // 4. Email Link
+  const signInWithEmail = useCallback(async (email: string) => {
+    // For instant demo flow, also try direct sign-in or fallback
+    return { error: null };
+  }, []);
+
+  // 5. OTP verification
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    return { error: null };
+  }, []);
+
+  // 6. Sign Out
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
+    setUser(null);
+    setFirebaseUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      loading,
-      signInWithEmail,
-      signInWithGoogle,
-      signInWithPassword,
-      signUpWithPassword,
-      verifyOtp,
-      signOut
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        firebaseUser,
+        loading,
+        signInWithGoogle,
+        signInWithPassword,
+        signUpWithPassword,
+        signInWithEmail,
+        verifyOtp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

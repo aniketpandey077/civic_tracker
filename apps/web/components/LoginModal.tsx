@@ -31,9 +31,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setError(null);
     setGoogleLoading(true);
     const { error: err } = await signInWithGoogle();
+    setGoogleLoading(false);
     if (err) {
       setError(err);
-      setGoogleLoading(false);
+    } else {
+      setStep('success');
+      setTimeout(() => {
+        onClose();
+        resetState();
+      }, 1500);
     }
   };
 
