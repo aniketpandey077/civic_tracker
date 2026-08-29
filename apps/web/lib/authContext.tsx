@@ -12,7 +12,7 @@ import {
 import { auth, googleProvider } from './firebase';
 import { supabase } from './supabase';
 
-export type UserRole = 'citizen' | 'department_staff' | 'admin';
+export type UserRole = 'citizen' | 'department_staff' | 'admin' | 'superadmin' | 'super_admin';
 
 export interface AppUser {
   id: string;
@@ -247,7 +247,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, []);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin =
+    user?.role === 'admin' ||
+    user?.role === 'superadmin' ||
+    user?.role === 'super_admin';
 
   return (
     <AuthContext.Provider
