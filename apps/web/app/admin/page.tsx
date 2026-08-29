@@ -239,6 +239,62 @@ export default function AdminDashboardPage() {
 
   if (!mounted) return null;
 
+  // Strict Access Guard: Only allow users with admin / superadmin role in Supabase
+  if (!isAdmin) {
+    return (
+      <div className="max-w-xl mx-auto py-20 px-4 text-center space-y-6 animate-in fade-in">
+        <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
+          <ShieldAlert className="w-9 h-9" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Administrator Access Restricted
+          </h2>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-md mx-auto">
+            This command center is protected and only accessible to verified municipal administrators with role assigned in the database.
+          </p>
+        </div>
+
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 space-y-2 text-left">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-500">Current User:</span>
+            <span className="font-mono font-bold text-slate-800">{user?.email || 'Not Signed In'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-slate-500">Assigned Role:</span>
+            <span className="font-mono font-extrabold uppercase px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
+              {role.toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={async () => {
+              setRoleRefreshing(true);
+              const newRole = await refreshRole();
+              setRoleRefreshing(false);
+              showSuccessBanner(`Checked Supabase: Role is ${newRole.toUpperCase()}`);
+            }}
+            disabled={roleRefreshing}
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-2.5 bg-[#1A56A4] hover:bg-[#154687] text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${roleRefreshing ? 'animate-spin' : ''}`} />
+            <span>{roleRefreshing ? 'Checking Supabase...' : 'Refresh Role from Supabase'}</span>
+          </button>
+
+          <Link
+            href="/"
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+          >
+            <span>Back to Public Portal</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-16">
 

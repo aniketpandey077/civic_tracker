@@ -29,13 +29,13 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const userLocation = useUserLocation();
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   const navLinks = [
     { href: '/map', label: 'GIS Map', icon: Map },
     { href: '/my-complaints', label: 'Docket Registry', icon: FileText },
     { href: '/dashboard', label: 'SLA Board', icon: BarChart3 },
-    { href: '/admin', label: 'Admin Command', icon: ShieldAlert, tag: 'Admin' },
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin Command', icon: ShieldAlert, tag: 'Admin' }] : []),
   ];
 
   return (
