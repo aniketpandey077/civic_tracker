@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles, Navigation, LocateFixed, Mic, MicOff } from 'lucide-react';
 import CameraCapture from './CameraCapture';
-import { DetectionResult, AnalyzeApiResponse } from '../lib/aiDetector';
+import { DetectionResult, AnalyzeApiResponse, analyzeImageWithLiveApi } from '../lib/aiDetector';
 import { matchZoneByCoordinates, reverseGeocodeReal, RealGeoAddress } from '../lib/zoneMatcher';
 import { generateComplaintNumber } from '../lib/complaintNumber';
-import { addIssue, getStoredIssues, attachEvidenceAndUpvote } from '../lib/store';
+import { addIssue, getStoredIssues, attachEvidenceAndUpvote, updateIssueAiResults } from '../lib/store';
 import { IssueCategory, CivicIssue } from '../lib/types';
 import { findNearbyExistingIssue, NearbyIssueMatch } from '../lib/geoDistance';
 
@@ -252,6 +252,18 @@ export default function ReportForm() {
       };
 
       addIssue(newIssue);
+
+      // Launch background AI analysis if not finished yet
+      if (!liveApiData && photoUrl) {
+        analyzeImageWithLiveApi(photoUrl, category)
+          .then((apiData) => {
+            updateIssueAiResults(newIssue.id, apiData);
+          })
+          .catch((err) => {
+            console.warn('Background AI analysis error note:', err);
+          });
+      }
+
       router.push(`/track/${complaintNumber}?justCreated=true`);
     } catch (err: any) {
       console.error(err);

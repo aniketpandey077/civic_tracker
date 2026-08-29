@@ -17,7 +17,8 @@ import {
   Camera,
   Navigation,
   ShieldAlert,
-  Wrench
+  Wrench,
+  Sparkles
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue } from '@/lib/store';
 import { CivicIssue } from '@/lib/types';
@@ -167,6 +168,26 @@ export default function MyComplaintsPage() {
                       <Navigation className="w-3 h-3 text-emerald-600 shrink-0" />
                       <span>{issue.distanceFormatted}</span>
                     </span>
+
+                    {/* AI Analysis Status / Severity Badge */}
+                    {issue.ai_analysis_status === 'analyzing' ? (
+                      <span className="bg-purple-100 text-purple-900 border border-purple-300 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center space-x-1 animate-pulse">
+                        <Sparkles className="w-3 h-3 text-purple-600 shrink-0" />
+                        <span>AI Analyzing...</span>
+                      </span>
+                    ) : issue.ai_severity !== undefined ? (
+                      <span
+                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          issue.ai_severity < 30
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            : issue.ai_severity <= 60
+                            ? 'bg-amber-100 text-amber-800 border-amber-300'
+                            : 'bg-rose-100 text-rose-800 border-rose-300'
+                        }`}
+                      >
+                        Sev: {issue.ai_severity}/100 {issue.ai_count !== undefined ? `(${issue.ai_count} def)` : ''}
+                      </span>
+                    ) : null}
 
                     {/* 45-Day Escalated Badge */}
                     {issue.escalation_email_sent_at && (
