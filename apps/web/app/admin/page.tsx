@@ -39,11 +39,14 @@ import {
 import { CivicIssue, IssueStatus, DashboardMetrics, AdminZone } from '@/lib/types';
 import { ADMIN_ZONES } from '@/lib/zoneMatcher';
 import { getStoredIssues, updateIssueStatus as storeUpdateStatus } from '@/lib/store';
+import { useAuth } from '@/lib/authContext';
 
 export default function AdminDashboardPage() {
+  const { user, isAdmin, role, refreshRole } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [issues, setIssues] = useState<CivicIssue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [roleRefreshing, setRoleRefreshing] = useState(false);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
 
   // Filters
@@ -270,6 +273,53 @@ export default function AdminDashboardPage() {
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Supabase Role & Access Verification Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2 rounded-xl ${isAdmin ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-slate-800">
+                User: <span className="font-mono text-[#1A56A4]">{user?.email || 'Guest / Not Signed In'}</span>
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-md font-extrabold uppercase text-[10px] ${
+                  isAdmin
+                    ? 'bg-emerald-500 text-white shadow-xs'
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}
+              >
+                Role: {role.toUpperCase()}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {isAdmin
+                ? '✅ Verified Administrator access authorized by Supabase Public Users table.'
+                : 'ℹ️ Role assigned as Citizen. To elevate to Admin, change role to "admin" in your Supabase `users` table.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            type="button"
+            onClick={async () => {
+              setRoleRefreshing(true);
+              const newRole = await refreshRole();
+              setRoleRefreshing(false);
+              showSuccessBanner(`Role updated from Supabase: ${newRole.toUpperCase()}`);
+            }}
+            disabled={roleRefreshing}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all shadow-xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${roleRefreshing ? 'animate-spin' : ''}`} />
+            <span>{roleRefreshing ? 'Checking Supabase...' : 'Refresh Role from Supabase'}</span>
           </button>
         </div>
       </div>

@@ -7,32 +7,69 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  sendSignInLinkToEmail
+  signOut as firebaseSignOut
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
+import { supabase } from './supabase';
+
+export type UserRole = 'citizen' | 'department_staff' | 'admin';
 
 export interface AppUser {
   id: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  role: UserRole;
 }
 
 interface AuthContextType {
   user: AppUser | null;
   firebaseUser: FirebaseUser | null;
+  isAdmin: boolean;
+  role: UserRole;
   loading: boolean;
   signInWithGoogle: () => Promise<{ error: string | null; user?: AppUser }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null; user?: AppUser }>;
   signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null; user?: AppUser }>;
-  signInAsDemo: (role: 'citizen' | 'admin') => Promise<{ error: string | null; user?: AppUser }>;
+  signInAsDemo: (role?: UserRole) => Promise<{ error: string | null; user?: AppUser }>;
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  refreshRole: () => Promise<UserRole>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** Helper to fetch the official role from Supabase users table */
+async function fetchUserRoleFromSupabase(email: string, name: string): Promise<UserRole> {
+  if (!email) return 'citizen';
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('role')
+      .ilike('email', email)
+      .maybeSingle();
+
+    if (data && data.role) {
+      return (data.role as UserRole) || 'citizen';
+    }
+
+    // If not in Supabase users table, create row as citizen
+    await supabase.from('users').upsert(
+      {
+        name: name || email.split('@')[0] || 'Citizen',
+        email: email.toLowerCase(),
+        role: 'citizen',
+      },
+      { onConflict: 'email' }
+    );
+
+    return 'citizen';
+  } catch (err) {
+    console.warn('[authContext] Supabase role check error:', err);
+    return 'citizen';
+  }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -52,18 +89,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Listen for Firebase auth state changes in real-time
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      if (fbUser) {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser && fbUser.email) {
+        const name = fbUser.displayName || fbUser.email.split('@')[0] || 'Citizen';
+        const role = await fetchUserRoleFromSupabase(fbUser.email, name);
+
         const appUser: AppUser = {
           id: fbUser.uid,
           email: fbUser.email,
-          displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen',
+          displayName: name,
           photoURL: fbUser.photoURL,
+          role: role,
         };
         setUser(appUser);
         setFirebaseUser(fbUser);
       } else {
-        // If not in demo mode, clear user
         if (typeof window !== 'undefined' && !localStorage.getItem('civic_demo_user')) {
           setUser(null);
           setFirebaseUser(null);
@@ -75,16 +115,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  const refreshRole = useCallback(async (): Promise<UserRole> => {
+    if (!user?.email) return 'citizen';
+    const updatedRole = await fetchUserRoleFromSupabase(user.email, user.displayName || '');
+    setUser(prev => prev ? { ...prev, role: updatedRole } : null);
+    return updatedRole;
+  }, [user]);
+
   // 1. Google 1-Click Popup Login
   const signInWithGoogle = useCallback(async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
+      const name = fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen';
+      const role = await fetchUserRoleFromSupabase(fbUser.email || '', name);
+
       const appUser: AppUser = {
         id: fbUser.uid,
         email: fbUser.email,
-        displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen',
+        displayName: name,
         photoURL: fbUser.photoURL,
+        role: role,
       };
       setUser(appUser);
       return { error: null, user: appUser };
@@ -105,11 +156,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       const fbUser = result.user;
+      const name = fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen';
+      const role = await fetchUserRoleFromSupabase(fbUser.email || email, name);
+
       const appUser: AppUser = {
         id: fbUser.uid,
         email: fbUser.email,
-        displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Citizen',
+        displayName: name,
         photoURL: fbUser.photoURL,
+        role: role,
       };
       setUser(appUser);
       return { error: null, user: appUser };
@@ -129,11 +184,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const fbUser = result.user;
+      const name = email.split('@')[0] || 'Citizen';
+      const role = await fetchUserRoleFromSupabase(email, name);
+
       const appUser: AppUser = {
         id: fbUser.uid,
         email: fbUser.email,
-        displayName: fbUser.email?.split('@')[0] || 'Citizen',
+        displayName: name,
         photoURL: null,
+        role: role,
       };
       setUser(appUser);
       return { error: null, user: appUser };
@@ -148,15 +207,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // 4. Instant Zero-Network-Fail Demo Login (Citizen or Admin)
-  const signInAsDemo = useCallback(async (role: 'citizen' | 'admin') => {
-    const demoEmail = role === 'admin' ? 'admin.lmc@punjab.gov.in' : 'citizen.demo@punjab.gov.in';
-    const demoName = role === 'admin' ? 'Municipal Administrator (Punjab)' : 'Gurpreet Singh (Citizen)';
+  // 4. Instant Demo Citizen Login
+  const signInAsDemo = useCallback(async (customRole: UserRole = 'citizen') => {
+    const demoEmail = 'citizen.punjab@gov.in';
+    const demoName = 'Gurpreet Singh (Verified Citizen)';
+    const role = await fetchUserRoleFromSupabase(demoEmail, demoName);
+
     const appUser: AppUser = {
-      id: role === 'admin' ? 'demo-admin-uid-101' : 'demo-citizen-uid-202',
+      id: 'demo-citizen-uid-202',
       email: demoEmail,
       displayName: demoName,
       photoURL: null,
+      role: role || customRole,
     };
     setUser(appUser);
     if (typeof window !== 'undefined') {
@@ -169,9 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     try {
       await firebaseSignOut(auth);
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
     setUser(null);
     setFirebaseUser(null);
     if (typeof window !== 'undefined') {
@@ -187,11 +247,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, []);
 
+  const isAdmin = user?.role === 'admin';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         firebaseUser,
+        isAdmin,
+        role: user?.role || 'citizen',
         loading,
         signInWithGoogle,
         signInWithPassword,
@@ -200,6 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signInWithEmail,
         verifyOtp,
         signOut,
+        refreshRole,
       }}
     >
       {children}
