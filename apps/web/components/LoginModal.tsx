@@ -94,7 +94,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     Sign in to CivicTrack
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Punjab Municipal Infrastructure Grievance & Accountability System
+                    Municipal Infrastructure Grievance & Accountability System
                   </p>
                 </div>
               </div>

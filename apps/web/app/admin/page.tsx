@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
   const [beforePhoto, setBeforePhoto] = useState('');
   const [afterPhoto, setAfterPhoto] = useState('');
   const [evidenceDesc, setEvidenceDesc] = useState('');
-  const [contractorName, setContractorName] = useState('Punjab PWD Rapid Action Crew');
+  const [contractorName, setContractorName] = useState('Municipal PWD Rapid Action Crew');
 
   // Broadcast Form
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CivicTrack_Punjab_Dockets_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `CivicTrack_Municipal_Dockets_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -247,7 +247,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-1.5">
           <div className="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full text-xs font-semibold">
             <ShieldAlert className="w-4 h-4 text-amber-300" />
-            <span>Executive Governance Console • Punjab Municipal Corporation</span>
+            <span>Executive Governance Console • Municipal Corporation</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             Administrator Command Center
@@ -375,7 +375,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
           <span className="text-[11px] font-bold uppercase text-purple-600">Active Wards</span>
           <div className="text-2xl font-black text-purple-600 font-mono-data">20</div>
-          <span className="text-[10px] text-purple-600 font-semibold">Punjab Municipal Network</span>
+          <span className="text-[10px] text-purple-600 font-semibold">Municipal Governance Network</span>
         </div>
       </div>
 
@@ -436,7 +436,7 @@ export default function AdminDashboardPage() {
                 onChange={e => setSelectedCity(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-slate-700 font-semibold focus:outline-none"
               >
-                <option value="all">All Cities (Punjab)</option>
+                <option value="all">All Municipal Cities & Wards</option>
                 <option value="ludhiana">Ludhiana (LDH)</option>
                 <option value="amritsar">Amritsar (AMR)</option>
                 <option value="chandigarh">Chandigarh (CHD)</option>
@@ -658,7 +658,7 @@ export default function AdminDashboardPage() {
         <div className="space-y-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <h3 className="font-extrabold text-base text-slate-900">
-              Punjab Municipal Corporation — 20 Jurisdiction Wards
+              Municipal Corporation — Jurisdiction Wards & Spatial Zones
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Mapped with PostGIS polygon spatial boundaries for automated routing.
