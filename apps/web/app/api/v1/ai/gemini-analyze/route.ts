@@ -88,8 +88,13 @@ Respond ONLY with a valid JSON object without markdown formatting or code blocks
 }`;
 
       try {
-        // Try Gemini 1.5 Flash (standard for vision) or Gemini 2.0 Flash
-        const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+        // High-precision multimodal vision models supported by Google Gemini
+        const models = [
+          'gemini-3.5-flash',
+          'gemini-2.5-flash-lite',
+          'gemini-flash-latest',
+          'gemini-3.7-flash',
+        ];
         let geminiResponse: any = null;
 
         for (const model of models) {
@@ -137,38 +142,16 @@ Respond ONLY with a valid JSON object without markdown formatting or code blocks
       }
     }
 
-    // ── Edge Verifier fallback (if API key not configured yet) ──────────────
-    // Checks category baseline without blind 72 approval
-    const baseSeverities: Record<string, number> = {
-      permanent_broken_streetlight: 76,
-      blind_corner: 84,
-      lack_of_cctv: 68,
-      overgrown_bushes: 58,
-      exposed_wires: 94,
-      manhole: 92,
-      fallen_tree: 80,
-      water_logging: 66,
-      water_leakage: 72,
-      garbage: 52,
-      broken_footpath: 46,
-      road_damage: 75,
-      pothole: 68,
-    };
-
-    const calculatedSev = baseSeverities[issueType] || 60;
-
+    // ── Edge Fallback when API key is completely unavailable ─────────────────
     return NextResponse.json({
-      detected: true,
-      is_civic_issue: true,
-      severity: calculatedSev,
-      confidence: 0.93,
+      detected: false,
+      is_civic_issue: false,
+      severity: 0,
+      confidence: 0.0,
       issue_type: issueType,
-      description: `Verified ${issueType.replace(/_/g, ' ')} defect evaluated for municipal docket routing.`,
-      hazards_detected: [
-        `Identified ${issueType.replace(/_/g, ' ')} infrastructure risk`,
-        'Spatial defect logged for field team dispatch',
-      ],
-      rejection_reason: null,
+      description: 'Image could not be verified by AI vision inspector. Please upload a clear photo of the actual defect.',
+      hazards_detected: [],
+      rejection_reason: 'Image verification required before registering municipal docket.',
     });
   } catch (error: any) {
     console.error('AI Gemini Analyze Route error:', error);
