@@ -1,6 +1,7 @@
 import { CivicIssue, IssueStatusHistory, ResolutionEvidence, ResolutionVerification, NotificationItem, DashboardMetrics, ZoneLeaderboardAccountability, ZoneLeaderboardPerformance, ZoneBudgetData } from './types';
 import { INITIAL_ISSUES, INITIAL_STATUS_HISTORY, INITIAL_EVIDENCE, INITIAL_NOTIFICATIONS } from './seedData';
 import { ADMIN_ZONES } from './zoneMatcher';
+import { AnalyzeApiResponse } from './aiDetector';
 
 const STORAGE_KEYS = {
   ISSUES: 'civictrack_issues',
@@ -36,6 +37,7 @@ export function saveStoredIssues(issues: CivicIssue[]) {
   memoryIssues = issues;
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_KEYS.ISSUES, JSON.stringify(issues));
+    window.dispatchEvent(new Event('civictrack_store_updated'));
   }
 }
 
@@ -183,6 +185,67 @@ export function upvoteIssue(issueId: string): { success: boolean; issue?: CivicI
   saveStoredIssues(issues);
 
   return { success: true, issue: updatedIssue, compressed };
+}
+
+export function attachEvidenceAndUpvote(
+  issueId: string,
+  photoUrl: string,
+  reporterName: string = 'Citizen Reporter'
+): CivicIssue | undefined {
+  const issues = getStoredIssues();
+  const index = issues.findIndex(i => i.id === issueId || i.complaint_number === issueId);
+  if (index === -1) return undefined;
+
+  const current = issues[index];
+  const photos = current.additional_photos || [];
+  const updatedPhotos = photoUrl && !photos.includes(photoUrl) ? [...photos, photoUrl] : photos;
+
+  const updated: CivicIssue = {
+    ...current,
+    upvote_count: (current.upvote_count || 1) + 1,
+    additional_photos: updatedPhotos,
+    has_upvoted: true,
+  };
+
+  issues[index] = updated;
+  saveStoredIssues(issues);
+
+  // Add history log
+  const history = getStoredHistory();
+  saveStoredHistory([
+    ...history,
+    {
+      id: `h-evidence-${Date.now()}`,
+      issue_id: current.id,
+      new_status: current.status,
+      changed_by: reporterName,
+      department_note: `Citizen attached additional photo evidence and upvoted ticket within 50m vicinity. Total upvotes: ${updated.upvote_count}.`,
+      created_at: new Date().toISOString(),
+    },
+  ]);
+
+  return updated;
+}
+
+export function updateIssueAiResults(issueId: string, apiResult: AnalyzeApiResponse): CivicIssue | undefined {
+  const issues = getStoredIssues();
+  const index = issues.findIndex(i => i.id === issueId || i.complaint_number === issueId);
+  if (index === -1) return undefined;
+
+  const current = issues[index];
+  const updated: CivicIssue = {
+    ...current,
+    ai_analysis_status: 'completed',
+    ai_severity: apiResult.severity,
+    ai_count: apiResult.count,
+    ai_detections: apiResult.detections || [],
+    ai_description: apiResult.description,
+    ai_confidence: apiResult.detections?.[0]?.confidence ?? current.ai_confidence ?? 0.95,
+  };
+
+  issues[index] = updated;
+  saveStoredIssues(issues);
+  return updated;
 }
 
 export function updateIssueStatus(

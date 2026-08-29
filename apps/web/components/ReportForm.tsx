@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles, Navigation, LocateFixed } from 'lucide-react';
+import { MapPin, AlertCircle, CheckCircle, ArrowRight, ShieldCheck, Sparkles, Navigation, LocateFixed, Mic, MicOff } from 'lucide-react';
 import CameraCapture from './CameraCapture';
 import { DetectionResult, AnalyzeApiResponse } from '../lib/aiDetector';
 import { matchZoneByCoordinates, reverseGeocodeReal, RealGeoAddress } from '../lib/zoneMatcher';
 import { generateComplaintNumber } from '../lib/complaintNumber';
-import { addIssue } from '../lib/store';
+import { addIssue, getStoredIssues, attachEvidenceAndUpvote } from '../lib/store';
 import { IssueCategory, CivicIssue } from '../lib/types';
+import { findNearbyExistingIssue, NearbyIssueMatch } from '../lib/geoDistance';
 
 const CATEGORIES: { id: IssueCategory; label: string; icon: string; defaultDesc: string }[] = [
   { id: 'pothole', label: 'Pothole & Cavity', icon: '🕳️', defaultDesc: 'Hazardous asphalt pothole causing traffic slowdown and safety risk.' },
@@ -42,6 +43,12 @@ export default function ReportForm() {
   const [resolvedAddress, setResolvedAddress] = useState<RealGeoAddress | null>(null);
   const [gpsStatus, setGpsStatus] = useState<'prompt' | 'granted' | 'denied' | 'fallback'>('prompt');
 
+  // 50m Spatial Deduplication State
+  const [nearbyDuplicate, setNearbyDuplicate] = useState<NearbyIssueMatch | null>(null);
+
+  // Voice Dictation state
+  const [isListening, setIsListening] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -50,7 +57,7 @@ export default function ReportForm() {
     fetchCurrentLocation();
   }, []);
 
-  // Update reverse geocoding & matched ward whenever coordinates change
+  // Update reverse geocoding & matched ward whenever coordinates change, + 50m deduplication check
   useEffect(() => {
     let isCurrent = true;
 
@@ -69,6 +76,11 @@ export default function ReportForm() {
     }
 
     lookupGeo();
+
+    // Check 50m deduplication against existing issues
+    const issues = getStoredIssues();
+    const match = findNearbyExistingIssue(latitude, longitude, issues, 50);
+    setNearbyDuplicate(match);
 
     return () => {
       isCurrent = false;
@@ -109,6 +121,38 @@ export default function ReportForm() {
     }
   };
 
+  const startVoiceDictation = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Voice dictation is not supported on this browser. Try Chrome or Edge!');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setDescription((prev) => (prev ? `${prev} ${transcript}` : transcript));
+        }
+      };
+
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
   const handlePhotoCaptured = (
     url: string,
     result: DetectionResult,
@@ -134,6 +178,17 @@ export default function ReportForm() {
     setTitle(`${issueLabel} near ${areaName}`);
   };
 
+  const handleMergeDuplicate = (targetIssueId: string) => {
+    if (!photoUrl) {
+      setErrorMsg('Please capture or select a photo before upvoting.');
+      return;
+    }
+    const updated = attachEvidenceAndUpvote(targetIssueId, photoUrl, 'Citizen Reporter');
+    if (updated) {
+      router.push(`/track/${updated.complaint_number || updated.id}?justUpvoted=true`);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -143,13 +198,13 @@ export default function ReportForm() {
       return;
     }
 
-    if (liveApiData && !liveApiData.detected) {
-      setErrorMsg('AI model detected no civic issues in this photo. Please select or capture a photo showing a civic defect.');
+    if (nearbyDuplicate) {
+      setErrorMsg(`A complaint (${nearbyDuplicate.issue.complaint_number}) already exists within 50m. Please upvote the existing ticket instead.`);
       return;
     }
 
-    if (!aiResult || !aiResult.is_civic_issue) {
-      setErrorMsg('AI validation could not detect a civic issue. Please select a clearer photo.');
+    if (liveApiData && !liveApiData.detected) {
+      setErrorMsg('AI model detected no civic issues in this photo. Please select or capture a photo showing a civic defect.');
       return;
     }
 
@@ -178,8 +233,14 @@ export default function ReportForm() {
         title: title || `${category.toUpperCase()} at ${zoneName}`,
         description: description || `Civic issue reported via live camera at ${zoneName}.`,
         photo_url: photoUrl,
-        ai_confidence: aiResult.confidence,
-        ai_detected_class: aiResult.detected_class,
+        additional_photos: [photoUrl],
+        ai_confidence: liveApiData?.detections?.[0]?.confidence ?? aiResult?.confidence ?? 0.95,
+        ai_detected_class: liveApiData?.issue_type ? liveApiData.issue_type.toUpperCase() : (aiResult?.detected_class || 'Pothole'),
+        ai_analysis_status: liveApiData ? 'completed' : 'analyzing',
+        ai_severity: liveApiData?.severity,
+        ai_count: liveApiData?.count,
+        ai_detections: liveApiData?.detections,
+        ai_description: liveApiData?.description,
         latitude,
         longitude,
         status: 'pending',
@@ -204,6 +265,42 @@ export default function ReportForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* 50m Spatial Deduplication Warning Banner */}
+      {nearbyDuplicate && (
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl space-y-3 text-xs text-amber-950 shadow-sm animate-pulse-subtle">
+          <div className="flex items-start space-x-2.5">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-bold text-amber-900 text-sm">
+                Duplicate Report Detected within 50 Meters ({nearbyDuplicate.distanceMeters}m away)
+              </h4>
+              <p className="text-amber-800 mt-1 leading-relaxed">
+                Ticket <span className="font-mono font-bold text-amber-950">{nearbyDuplicate.issue.complaint_number}</span> (
+                <em>"{nearbyDuplicate.issue.title}"</em>) was already registered at this location. To prevent ticket spamming, you can attach your photo as supporting evidence & upvote the existing ticket!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => handleMergeDuplicate(nearbyDuplicate.issue.id)}
+              disabled={!photoUrl}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-300 text-white font-bold rounded-xl shadow transition-all flex items-center space-x-1.5"
+            >
+              <span>🗳️ Upvote & Attach My Photo to #{nearbyDuplicate.issue.complaint_number}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push(`/track/${nearbyDuplicate.issue.complaint_number}`)}
+              className="px-3.5 py-2 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold rounded-xl transition-all"
+            >
+              View Existing Ticket
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 1. Category Picker */}
       <div className="space-y-2">
         <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -243,7 +340,7 @@ export default function ReportForm() {
             2. Live Camera Capture & YOLOv8 Verification
           </label>
           <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            AI Model Active
+            Auto-Compression & Background AI Active
           </span>
         </div>
         <CameraCapture
@@ -299,7 +396,7 @@ export default function ReportForm() {
         </div>
       </div>
 
-      {/* 4. Issue Title & Landmark */}
+      {/* 4. Issue Title & Landmark (with Voice Dictation) */}
       <div className="space-y-3">
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -316,14 +413,37 @@ export default function ReportForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">
-            Description & Specific Landmark
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-bold text-slate-700">
+              Description & Specific Landmark
+            </label>
+            <button
+              type="button"
+              onClick={startVoiceDictation}
+              className={`text-[11px] font-bold flex items-center space-x-1 px-2.5 py-1 rounded-lg border transition-all ${
+                isListening
+                  ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+              }`}
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="w-3 h-3" />
+                  <span>Listening...</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-3 h-3 text-emerald-600" />
+                  <span>Dictate Description (Voice)</span>
+                </>
+              )}
+            </button>
+          </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            placeholder="Add landmark or specific hazard details for the repair crew..."
+            placeholder="Add landmark or specific hazard details (or click Voice Dictation above)..."
             className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 font-medium text-slate-900"
           />
         </div>
@@ -339,7 +459,7 @@ export default function ReportForm() {
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isSubmitting || !photoUrl}
+        disabled={isSubmitting || !photoUrl || !!nearbyDuplicate}
         className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2"
       >
         {isSubmitting ? (

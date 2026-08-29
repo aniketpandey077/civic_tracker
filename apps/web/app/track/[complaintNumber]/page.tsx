@@ -17,7 +17,10 @@ import {
   ArrowLeft,
   Eye,
   CheckSquare,
-  Users
+  Users,
+  ShieldAlert,
+  Loader2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { getIssueByIdOrNumber, getStoredHistory, getStoredEvidence, upvoteIssue } from '@/lib/store';
 import { CivicIssue, IssueStatusHistory, ResolutionEvidence } from '@/lib/types';
@@ -32,6 +35,7 @@ export default function TrackComplaintPage() {
   const searchParams = useSearchParams();
   const complaintNumber = params.complaintNumber as string;
   const justCreated = searchParams.get('justCreated') === 'true';
+  const justUpvoted = searchParams.get('justUpvoted') === 'true';
 
   const [issue, setIssue] = useState<CivicIssue | null>(null);
   const [history, setHistory] = useState<IssueStatusHistory[]>([]);
@@ -40,7 +44,9 @@ export default function TrackComplaintPage() {
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
   const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false);
-  const [upvoteBanner, setUpvoteBanner] = useState<string | null>(null);
+  const [upvoteBanner, setUpvoteBanner] = useState<string | null>(
+    justUpvoted ? '🗳️ Photo evidence attached & complaint upvoted successfully!' : null
+  );
 
   const loadTicketData = () => {
     if (!complaintNumber) return;
@@ -56,6 +62,21 @@ export default function TrackComplaintPage() {
 
   useEffect(() => {
     loadTicketData();
+
+    // Reactive store update listener
+    const handleStoreUpdate = () => {
+      loadTicketData();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('civictrack_store_updated', handleStoreUpdate);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('civictrack_store_updated', handleStoreUpdate);
+      }
+    };
   }, [complaintNumber]);
 
   if (!issue) {
@@ -91,6 +112,12 @@ export default function TrackComplaintPage() {
   const diffDays = Math.ceil((deadlineDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const isResolved = issue.status === 'resolved';
   const isOverdue = !isResolved && diffDays <= 0;
+
+  const getSeverityBadgeClass = (severity: number) => {
+    if (severity < 30) return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+    if (severity <= 60) return 'bg-amber-100 text-amber-800 border-amber-300';
+    return 'bg-rose-100 text-rose-800 border-rose-300';
+  };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
@@ -142,9 +169,22 @@ export default function TrackComplaintPage() {
                 </span>
               )}
 
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                {(issue.ai_confidence * 100).toFixed(1)}% AI Confirmed
-              </span>
+              {/* AI Analysis Status / Severity Badge */}
+              {issue.ai_severity !== undefined ? (
+                <span className={`text-xs font-bold px-3 py-1 rounded-full border flex items-center space-x-1 ${getSeverityBadgeClass(issue.ai_severity)}`}>
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Severity: {issue.ai_severity}/100</span>
+                </span>
+              ) : issue.ai_analysis_status === 'analyzing' ? (
+                <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full flex items-center space-x-1 animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                  <span>AI Inference Running in Background...</span>
+                </span>
+              ) : (
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  {(issue.ai_confidence * 100).toFixed(1)}% AI Confirmed
+                </span>
+              )}
             </div>
 
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">{issue.title}</h1>
@@ -188,6 +228,27 @@ export default function TrackComplaintPage() {
             )}
           </div>
         </div>
+
+        {/* Community Evidence Gallery if additional photos exist */}
+        {issue.additional_photos && issue.additional_photos.length > 0 && (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+            <span className="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+              <ImageIcon className="w-4 h-4 text-emerald-600" />
+              <span>Community Photo Evidence ({issue.additional_photos.length} Photo{issue.additional_photos.length > 1 ? 's' : ''})</span>
+            </span>
+            <div className="flex flex-wrap gap-2.5 pt-1">
+              {issue.additional_photos.map((photo, idx) => (
+                <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-300 shadow-2xs group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photo} alt={`Evidence #${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <span className="absolute bottom-1 right-1 bg-slate-900/80 text-white font-mono text-[9px] px-1 rounded">
+                    #{idx + 1}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Action Bar (Upvote, Verify, Evidence, Escalation) */}
         <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100">

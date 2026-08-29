@@ -42,6 +42,14 @@ export type IssueStatus =
   | 'resolved'
   | 'reopened';
 
+export type AiAnalysisStatus = 'pending' | 'analyzing' | 'completed' | 'failed';
+
+export interface AiDetectionBox {
+  confidence: number;
+  box: [number, number, number, number];
+  severity: number;
+}
+
 export interface CivicIssue {
   id: string;
   complaint_number: string; // e.g. CTR-2026-JPR-000184
@@ -54,8 +62,14 @@ export interface CivicIssue {
   title: string;
   description: string;
   photo_url: string;
+  additional_photos?: string[];
   ai_confidence: number;
   ai_detected_class: string;
+  ai_analysis_status?: AiAnalysisStatus;
+  ai_severity?: number;
+  ai_count?: number;
+  ai_detections?: AiDetectionBox[];
+  ai_description?: string;
   latitude: number;
   longitude: number;
   status: IssueStatus;
