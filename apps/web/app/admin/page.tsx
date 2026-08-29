@@ -40,6 +40,7 @@ import { CivicIssue, IssueStatus, DashboardMetrics, AdminZone } from '@/lib/type
 import { ADMIN_ZONES } from '@/lib/zoneMatcher';
 import { getStoredIssues, updateIssueStatus as storeUpdateStatus } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
+import EvidenceModal from '@/components/EvidenceModal';
 
 export default function AdminDashboardPage() {
   const { user, isAdmin, role, refreshRole } = useAuth();
@@ -896,88 +897,15 @@ export default function AdminDashboardPage() {
 
       {/* MODAL 2: CONTRACTOR EVIDENCE MODAL */}
       {evidenceModalIssue && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-slate-200 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <span className="font-mono text-xs font-extrabold text-[#176B3A]">
-                  {evidenceModalIssue.complaint_number}
-                </span>
-                <h3 className="font-bold text-slate-900 text-sm">Upload Contractor Repair Evidence</h3>
-              </div>
-              <button
-                onClick={() => setEvidenceModalIssue(null)}
-                className="text-slate-400 hover:text-slate-700 font-bold p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitEvidence} className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 uppercase">Contractor / Crew Name</label>
-                <input
-                  type="text"
-                  value={contractorName}
-                  onChange={e => setContractorName(e.target.value)}
-                  required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 uppercase">Before Photo URL</label>
-                <input
-                  type="url"
-                  value={beforePhoto}
-                  onChange={e => setBeforePhoto(e.target.value)}
-                  placeholder="https://..."
-                  required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 uppercase">After (Repaired) Photo URL</label>
-                <input
-                  type="url"
-                  value={afterPhoto}
-                  onChange={e => setAfterPhoto(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-1541888946425-d0fbb180c5f5?..."
-                  required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-700 uppercase">Repair Work Description</label>
-                <textarea
-                  value={evidenceDesc}
-                  onChange={e => setEvidenceDesc(e.target.value)}
-                  placeholder="Describe the asphalt filling, bitumen compaction, pipe replacement, etc..."
-                  rows={2}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEvidenceModalIssue(null)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-[#176B3A] hover:bg-[#12582e] text-white font-bold text-xs rounded-xl shadow-sm"
-                >
-                  Submit & Move to Verified
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <EvidenceModal
+          issue={evidenceModalIssue}
+          isOpen={!!evidenceModalIssue}
+          onClose={() => setEvidenceModalIssue(null)}
+          onSubmitted={() => {
+            loadData();
+            showSuccessBanner(`Resolution proof registered for ${evidenceModalIssue.complaint_number}`);
+          }}
+        />
       )}
 
     </div>
