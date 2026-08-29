@@ -211,7 +211,7 @@ export default function DepartmentResolverPage() {
                       {/* Distance Badge */}
                       <span className="inline-flex items-center space-x-1 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                         <MapPin className="w-3 h-3 text-emerald-600" />
-                        <span>{issue.distanceText}</span>
+                        <span>{issue.distanceFormatted}</span>
                       </span>
                     </div>
 
