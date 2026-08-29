@@ -81,6 +81,7 @@ export default function AdminDashboardPage() {
     try {
       const dbIssues = await fetchIssues();
       if (dbIssues && dbIssues.length > 0) {
+        saveStoredIssues(dbIssues);
         setIssues(dbIssues);
       } else {
         // Fallback to local store if Supabase table is empty

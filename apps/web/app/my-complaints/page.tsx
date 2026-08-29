@@ -23,7 +23,8 @@ import {
   Lock,
   ExternalLink
 } from 'lucide-react';
-import { getStoredIssues, upvoteIssue } from '@/lib/store';
+import { getStoredIssues, upvoteIssue, saveStoredIssues } from '@/lib/store';
+import { fetchIssues } from '@/lib/db';
 import { CivicIssue } from '@/lib/types';
 import { useAuth } from '@/lib/authContext';
 import LoginModal from '@/components/LoginModal';
@@ -39,7 +40,15 @@ export default function MyComplaintsPage() {
 
   const { user, signInWithGoogle } = useAuth();
 
-  const loadIssues = () => {
+  const loadIssues = async () => {
+    try {
+      const dbIssues = await fetchIssues();
+      if (dbIssues && dbIssues.length > 0) {
+        saveStoredIssues(dbIssues);
+        setRawIssues(dbIssues);
+        return;
+      }
+    } catch {}
     setRawIssues(getStoredIssues());
   };
 

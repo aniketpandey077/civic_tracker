@@ -20,7 +20,8 @@ import {
   CheckCircle2,
   ArrowRight
 } from 'lucide-react';
-import { getStoredIssues, updateIssueStatus } from '@/lib/store';
+import { getStoredIssues, updateIssueStatus, saveStoredIssues } from '@/lib/store';
+import { fetchIssues } from '@/lib/db';
 import { CivicIssue } from '@/lib/types';
 import { useUserLocation } from '@/lib/useUserLocation';
 import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
@@ -36,7 +37,15 @@ export default function DepartmentResolverPage() {
 
   const userLocation = useUserLocation();
 
-  const loadIssues = () => {
+  const loadIssues = async () => {
+    try {
+      const dbIssues = await fetchIssues();
+      if (dbIssues && dbIssues.length > 0) {
+        saveStoredIssues(dbIssues);
+        setRawIssues(dbIssues);
+        return;
+      }
+    } catch {}
     setRawIssues(getStoredIssues());
   };
 

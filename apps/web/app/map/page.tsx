@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import MapView from '@/components/MapView';
-import { getStoredIssues } from '@/lib/store';
+import { getStoredIssues, saveStoredIssues } from '@/lib/store';
+import { fetchIssues } from '@/lib/db';
 import { CivicIssue } from '@/lib/types';
 import { Map, Flame, ShieldAlert, CheckCircle, Clock, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -13,7 +14,16 @@ export default function MapPage() {
 
   useEffect(() => {
     setMounted(true);
-    setIssues(getStoredIssues());
+    fetchIssues().then(dbIssues => {
+      if (dbIssues && dbIssues.length > 0) {
+        saveStoredIssues(dbIssues);
+        setIssues(dbIssues);
+      } else {
+        setIssues(getStoredIssues());
+      }
+    }).catch(() => {
+      setIssues(getStoredIssues());
+    });
   }, []);
 
   const pendingCount = issues.filter(i => i.status === 'pending').length;
