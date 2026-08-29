@@ -450,37 +450,13 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         </div>
       )}
 
-      {/* Quick Sample Presets */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
-        <span className="text-xs font-bold text-slate-700 block">
-          âš¡ Instant Photo Shortcuts (Click to Test Live AI Detection):
-        </span>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {samplePresets.map((preset, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => selectPreset(preset.url, preset.category, preset.isCleanTest)}
-              className={`text-left px-3 py-2 border rounded-xl text-xs font-medium transition-all truncate ${
-                preset.isCleanTest
-                  ? 'bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-700 font-bold'
-                  : 'bg-white hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-900'
-              }`}
-            >
-              {preset.label}
-            </button>
-          ))}
-
-        </div>
-      </div>
-
       {cameraError && (
         <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start space-x-2.5">
           <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-semibold">{cameraError}</p>
             <p className="text-[11px] text-amber-800">
-              You can also use the <strong>Upload Photo</strong> button or any sample preset above to test instant detection.
+              Please use the <strong>Upload Photo File</strong> button or open your webcam to capture photo evidence.
             </p>
           </div>
         </div>
