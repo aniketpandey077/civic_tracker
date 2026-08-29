@@ -24,6 +24,7 @@ import {
   Wrench
 } from 'lucide-react';
 import { getIssueByIdOrNumber, getStoredHistory, getStoredEvidence, upvoteIssue } from '@/lib/store';
+import { fetchIssueByNumber, fetchHistory, fetchEvidence } from '@/lib/db';
 import { CivicIssue, IssueStatusHistory, ResolutionEvidence } from '@/lib/types';
 import StatusTimeline from '@/components/StatusTimeline';
 import ReceiptCard from '@/components/ReceiptCard';
@@ -51,19 +52,43 @@ export default function TrackComplaintPage() {
     justUpvoted ? '🗳️ Photo evidence attached & complaint upvoted successfully!' : null
   );
 
-  const loadData = () => {
-    if (!complaintNumber) return;
-    const found = getIssueByIdOrNumber(complaintNumber);
-    setIssue(found || null);
+  const [loading, setLoading] = useState(true);
 
-    if (found) {
+  const loadData = async () => {
+    if (!complaintNumber) return;
+    setLoading(true);
+
+    try {
+      // 1. Primary: Fetch from live Supabase database
+      const dbIssue = await fetchIssueByNumber(complaintNumber);
+      if (dbIssue) {
+        setIssue(dbIssue);
+        const [dbHistory, dbEvidenceList] = await Promise.all([
+          fetchHistory(dbIssue.id),
+          fetchEvidence(dbIssue.id)
+        ]);
+        setHistory(dbHistory);
+        setEvidence(dbEvidenceList.length > 0 ? dbEvidenceList[0] : null);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('[Track] Supabase fetch fallback to local store:', err);
+    }
+
+    // 2. Fallback: Check local store
+    const localFound = getIssueByIdOrNumber(complaintNumber);
+    setIssue(localFound || null);
+
+    if (localFound) {
       const allHist = getStoredHistory();
-      setHistory(allHist.filter(h => h.issue_id === found.id));
+      setHistory(allHist.filter(h => h.issue_id === localFound.id));
 
       const allEv = getStoredEvidence();
-      const ev = allEv.find(e => e.issue_id === found.id);
+      const ev = allEv.find(e => e.issue_id === localFound.id);
       setEvidence(ev || null);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -80,7 +105,15 @@ export default function TrackComplaintPage() {
     };
   }, [complaintNumber]);
 
-  if (!mounted) return null;
+  if (!mounted || loading) {
+    return (
+      <div className="max-w-xl mx-auto py-24 text-center space-y-4">
+        <Loader2 className="w-10 h-10 text-[#1A56A4] animate-spin mx-auto" />
+        <h2 className="text-base font-bold text-slate-800">Loading Municipal Grievance Docket...</h2>
+        <p className="text-xs text-slate-500 font-mono">Docket: {complaintNumber}</p>
+      </div>
+    );
+  }
 
   if (!issue) {
     return (

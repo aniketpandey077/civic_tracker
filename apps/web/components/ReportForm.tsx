@@ -250,12 +250,12 @@ export default function ReportForm() {
         has_upvoted: true,
       };
 
-      // Try Supabase first; fall back to localStorage if DB not yet set up
-      const savedIssue = await createIssue(newIssue).catch(() => null);
-      if (!savedIssue) {
-        // Fallback: persist to localStorage so demo still works
-        addIssue(newIssue);
-      }
+      // Save to Supabase DB and local store so both live phone scans and local client see the new docket immediately
+      const savedIssue = await createIssue(newIssue).catch(err => {
+        console.warn('Supabase create issue note:', err);
+        return null;
+      });
+      addIssue(savedIssue || newIssue);
 
       // Launch background AI analysis if not finished yet
       if (!liveApiData && photoUrl) {
