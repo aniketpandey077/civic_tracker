@@ -3,6 +3,8 @@ import { INITIAL_ISSUES, INITIAL_STATUS_HISTORY, INITIAL_EVIDENCE, INITIAL_NOTIF
 import { ADMIN_ZONES } from './zoneMatcher';
 import { AnalyzeApiResponse } from './aiDetector';
 
+import { is45DaysOverdue, generateDepartmentEscalationEmail } from './emailEscalation';
+
 const STORAGE_KEYS = {
   ISSUES: 'civictrack_issues',
   HISTORY: 'civictrack_status_history',
@@ -18,19 +20,60 @@ let memoryEvidence: ResolutionEvidence[] = [...INITIAL_EVIDENCE];
 let memoryVerifications: ResolutionVerification[] = [];
 let memoryNotifications: NotificationItem[] = [...INITIAL_NOTIFICATIONS];
 
+export function checkAndTrigger45DayEscalations(issues: CivicIssue[]): { issues: CivicIssue[]; updated: boolean } {
+  let hasChanges = false;
+  const updatedIssues = issues.map((issue) => {
+    if (is45DaysOverdue(issue) && !issue.escalation_email_sent_at) {
+      hasChanges = true;
+      const emailPayload = generateDepartmentEscalationEmail(issue);
+
+      // Log official escalation history entry
+      const history = getStoredHistory();
+      saveStoredHistory([
+        ...history,
+        {
+          id: `h-45day-${Date.now()}-${issue.id}`,
+          issue_id: issue.id,
+          new_status: issue.status,
+          changed_by: 'CivicTrack Automated 45-Day Governance Engine',
+          department_note: `CRITICAL 45-DAY SLA VIOLATION: Official escalation notice dispatched to ${emailPayload.to_email} (${issue.department}). Overdue by ${emailPayload.days_overdue} days.`,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      return {
+        ...issue,
+        escalated: true,
+        department_email: emailPayload.to_email,
+        escalation_email_sent_at: emailPayload.dispatch_timestamp,
+      };
+    }
+    return issue;
+  });
+
+  return { issues: updatedIssues, updated: hasChanges };
+}
+
 // Helper to get stored data (handles browser vs SSR)
 export function getStoredIssues(): CivicIssue[] {
+  let issues = memoryIssues;
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(STORAGE_KEYS.ISSUES);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        issues = JSON.parse(saved);
       } catch {
         // use memory
       }
     }
   }
-  return memoryIssues;
+
+  const { issues: checkedIssues, updated } = checkAndTrigger45DayEscalations(issues);
+  if (updated) {
+    saveStoredIssues(checkedIssues);
+  }
+
+  return checkedIssues;
 }
 
 export function saveStoredIssues(issues: CivicIssue[]) {

@@ -14,20 +14,23 @@ import {
   Building2,
   ThumbsUp,
   PlusCircle,
-  Camera
+  Camera,
+  Navigation,
+  ShieldAlert
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue } from '@/lib/store';
 import { CivicIssue } from '@/lib/types';
 import { useUserLocation } from '@/lib/useUserLocation';
+import { sortIssuesByNearest, SortedCivicIssue } from '@/lib/geoDistance';
 
 export default function MyComplaintsPage() {
-  const [issues, setIssues] = useState<CivicIssue[]>([]);
+  const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const userLocation = useUserLocation();
 
   const loadIssues = () => {
-    setIssues(getStoredIssues());
+    setRawIssues(getStoredIssues());
   };
 
   useEffect(() => {
@@ -41,7 +44,14 @@ export default function MyComplaintsPage() {
     loadIssues();
   };
 
-  const filtered = issues.filter(issue => {
+  // Sort issues nearest to farthest relative to user's live GPS coordinates
+  const sortedIssues: SortedCivicIssue[] = sortIssuesByNearest(
+    userLocation.latitude,
+    userLocation.longitude,
+    rawIssues
+  );
+
+  const filtered = sortedIssues.filter(issue => {
     if (statusFilter !== 'all' && issue.status !== statusFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -57,7 +67,7 @@ export default function MyComplaintsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Prominent New Complaint Action */}
+      {/* Header with Location Sorting Context */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
@@ -69,7 +79,7 @@ export default function MyComplaintsPage() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Track all submitted work orders, live SLA countdowns, and resolution progress across municipal wards.
+            Ordered from <strong className="text-emerald-700">nearest to farthest</strong> relative to your GPS coordinates ({userLocation.city}).
           </p>
         </div>
 
@@ -103,7 +113,7 @@ export default function MyComplaintsPage() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-600 font-medium text-slate-700 w-full sm:w-auto"
           >
-            <option value="all">All Statuses ({issues.length})</option>
+            <option value="all">All Statuses ({rawIssues.length})</option>
             <option value="pending">Pending</option>
             <option value="verified">Verified</option>
             <option value="assigned">Assigned</option>
@@ -113,7 +123,7 @@ export default function MyComplaintsPage() {
         </div>
       </div>
 
-      {/* Issues Grid */}
+      {/* Issues Grid (Sorted Nearest to Farthest) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map(issue => {
           const isResolved = issue.status === 'resolved';
@@ -125,28 +135,44 @@ export default function MyComplaintsPage() {
             <Link
               key={issue.id}
               href={`/track/${issue.complaint_number}`}
-              className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4"
+              className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-emerald-500/40 transition-all flex flex-col justify-between space-y-4 relative"
             >
               <div className="space-y-3">
                 {/* Header Badge Row */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-1">
                   <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
                     {issue.complaint_number}
                   </span>
 
-                  {isResolved ? (
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" /> Resolved
+                  <div className="flex items-center space-x-1">
+                    {/* Proximity Distance Badge */}
+                    <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center space-x-1">
+                      <Navigation className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span>{issue.distanceFormatted}</span>
                     </span>
-                  ) : isOverdue ? (
-                    <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" /> Overdue
-                    </span>
-                  ) : (
-                    <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
-                      {issue.status.replace('_', ' ')}
-                    </span>
-                  )}
+
+                    {/* 45-Day Escalated Badge */}
+                    {issue.escalation_email_sent_at && (
+                      <span className="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center space-x-1">
+                        <ShieldAlert className="w-3 h-3 text-rose-600" />
+                        <span>45d Escalated</span>
+                      </span>
+                    )}
+
+                    {isResolved ? (
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> Resolved
+                      </span>
+                    ) : isOverdue ? (
+                      <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Overdue
+                      </span>
+                    ) : (
+                      <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
+                        {issue.status.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Photo Thumbnail + Info */}

@@ -41,7 +41,6 @@ export function findNearbyExistingIssue(
   let closestMatch: NearbyIssueMatch | null = null;
 
   for (const issue of issues) {
-    // Only check active/non-resolved issues or recently reported issues
     if (issue.status === 'resolved') continue;
 
     const distance = calculateDistanceMeters(userLat, userLng, issue.latitude, issue.longitude);
@@ -53,4 +52,40 @@ export function findNearbyExistingIssue(
   }
 
   return closestMatch;
+}
+
+export interface SortedCivicIssue extends CivicIssue {
+  distanceMeters: number;
+  distanceFormatted: string;
+}
+
+/**
+ * Sorts all civic issues from NEAREST to FARTHEST relative to the user's current GPS coordinates.
+ * Appends human-readable distance (e.g. "120m away" or "1.4km away").
+ */
+export function sortIssuesByNearest(
+  userLat: number,
+  userLng: number,
+  issues: CivicIssue[]
+): SortedCivicIssue[] {
+  return issues
+    .map((issue) => {
+      const distanceMeters = calculateDistanceMeters(
+        userLat,
+        userLng,
+        issue.latitude,
+        issue.longitude
+      );
+      const distanceFormatted =
+        distanceMeters < 1000
+          ? `${distanceMeters}m away`
+          : `${(distanceMeters / 1000).toFixed(1)}km away`;
+
+      return {
+        ...issue,
+        distanceMeters,
+        distanceFormatted,
+      };
+    })
+    .sort((a, b) => a.distanceMeters - b.distanceMeters);
 }

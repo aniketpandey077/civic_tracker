@@ -146,6 +146,21 @@ export default function TrackComplaintPage() {
         </div>
       )}
 
+      {/* 45-Day Overdue Department Email Escalation Banner */}
+      {issue.escalation_email_sent_at && (
+        <div className="p-4 bg-rose-50 border border-rose-300 rounded-2xl text-xs text-rose-950 space-y-2 shadow-sm animate-pulse-subtle">
+          <div className="flex items-center space-x-2">
+            <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+            <h4 className="font-bold text-rose-900 text-sm">
+              CRITICAL 45-DAY SLA VIOLATION: DEPARTMENT HEAD EMAIL ESCALATION DISPATCHED
+            </h4>
+          </div>
+          <p className="text-rose-800 leading-relaxed">
+            This defect remained unresolved after 45 statutory days. An official municipal escalation email payload was automatically generated and dispatched to <span className="font-bold font-mono text-rose-950">{issue.department_email || 'department.head@jaipurmc.org'}</span> on {new Date(issue.escalation_email_sent_at).toLocaleString()}.
+          </p>
+        </div>
+      )}
+
       {/* Main Ticket Banner Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">

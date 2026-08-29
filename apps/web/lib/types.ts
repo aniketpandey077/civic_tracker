@@ -79,6 +79,8 @@ export interface CivicIssue {
   resolved_at?: string;
   escalated: boolean;
   escalation_graphic_url?: string;
+  escalation_email_sent_at?: string;
+  department_email?: string;
   has_upvoted?: boolean;
 }
 
