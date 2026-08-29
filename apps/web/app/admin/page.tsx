@@ -38,7 +38,7 @@ import {
 } from '@/lib/db';
 import { CivicIssue, IssueStatus, DashboardMetrics, AdminZone } from '@/lib/types';
 import { ADMIN_ZONES } from '@/lib/zoneMatcher';
-import { getStoredIssues, updateIssueStatus as storeUpdateStatus } from '@/lib/store';
+import { getStoredIssues, saveStoredIssues, updateIssueStatus as storeUpdateStatus } from '@/lib/store';
 import { useAuth } from '@/lib/authContext';
 import EvidenceModal from '@/components/EvidenceModal';
 
