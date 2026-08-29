@@ -141,7 +141,7 @@ export default function DepartmentPage() {
       {escalationResult && (
         <div className="p-3.5 bg-[#FEF2F2]/80 border border-[#B91C1C] rounded-xl text-xs font-semibold text-[#B91C1C] flex items-center justify-between shadow-lg">
           <span>{escalationResult}</span>
-          <button onClick={() => setEscalationResult(null)} className="text-rose-400 hover:text-white">âœ•</button>
+          <button onClick={() => setEscalationResult(null)} className="text-rose-400 hover:text-white">✕</button>
         </div>
       )}
 
@@ -183,8 +183,8 @@ export default function DepartmentPage() {
               </div>
 
               <div className="flex items-center space-x-3 text-xs text-[#6B6860] font-medium">
-                <span className="text-[#D95F02]">ðŸ“ {issue.zone_name}</span>
-                <span>â€¢</span>
+                <span className="text-[#D95F02]">📍 {issue.zone_name}</span>
+                <span>•</span>
                 <span className="text-[#1A56A4] font-semibold">{issue.department}</span>
               </div>
 

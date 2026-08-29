@@ -82,7 +82,7 @@ export default function ReceiptCard({ issue }: ReceiptCardProps) {
               <span className="font-extrabold text-base tracking-tight text-white">CivicTrack</span>
             </div>
             <p className="text-[10px] text-[#6B6860] font-medium">
-              Official Grievance Registration Receipt â€¢ Municipal Wards
+              Official Grievance Registration Receipt • Municipal Wards
             </p>
           </div>
 

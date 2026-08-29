@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { Trophy, AlertOctagon, ArrowUpRight, ShieldCheck, Flame } from 'lucide-react';
@@ -94,7 +94,7 @@ export default function LeaderboardTable({
                 <td className="py-3 pl-2 font-mono-data font-bold">
                   {isTop ? (
                     <span className="flex items-center text-[#176B3A] font-extrabold">
-                      ðŸ¥‡ #1
+                      🥇 #1
                     </span>
                   ) : (
                     <span className="text-[#6B6860]">#{idx + 1}</span>

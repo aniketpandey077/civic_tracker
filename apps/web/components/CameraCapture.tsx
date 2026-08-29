@@ -425,7 +425,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-between shadow-2xs">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-[#176B3A] animate-ping shrink-0" />
-            <span>Photo Attached â€¢ AI analysis runs in background upon submission</span>
+            <span>Photo Attached • AI analysis runs in background upon submission</span>
           </div>
           <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full">
             Ready to Submit

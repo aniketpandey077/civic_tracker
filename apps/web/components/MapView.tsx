@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
@@ -153,7 +153,7 @@ export default function MapView({
             if (userMarkerRef.current) userMarkerRef.current.remove();
             userMarkerRef.current = L.marker([latitude, longitude], { icon: userIcon })
               .addTo(map)
-              .bindPopup('<b>ðŸ“ Your Live Location</b>')
+              .bindPopup('<b>📍 Your Live Location</b>')
               .openPopup();
           },
           () => {},
@@ -183,17 +183,17 @@ export default function MapView({
 
   const getCategoryEmoji = (cat: string) => {
     switch (cat) {
-      case 'pothole': return 'ðŸ•³ï¸';
-      case 'fallen_tree': return 'ðŸŒ³';
-      case 'exposed_wires': return 'âš¡';
-      case 'garbage': return 'ðŸ—‘ï¸';
-      case 'water_logging': return 'ðŸ¦Ÿ';
-      case 'broken_footpath': return 'ðŸ§±';
-      case 'streetlight': return 'ðŸ’¡';
-      case 'manhole': return 'âš ï¸';
-      case 'water_leakage': return 'ðŸ’§';
-      case 'dead_animal': return 'ðŸ¾';
-      default: return 'ðŸš§';
+      case 'pothole': return '🕳️';
+      case 'fallen_tree': return '🌳';
+      case 'exposed_wires': return '⚡';
+      case 'garbage': return '🗑️';
+      case 'water_logging': return '🌊';
+      case 'broken_footpath': return '🧱';
+      case 'streetlight': return '💡';
+      case 'manhole': return '⚠️';
+      case 'water_leakage': return '💧';
+      case 'dead_animal': return '🐾';
+      default: return '🚧';
     }
   };
 
@@ -270,7 +270,7 @@ export default function MapView({
 
         const marker = L.marker([latitude, longitude], { icon: userIcon })
           .addTo(map)
-          .bindPopup(`<b>ðŸ“ You Are Here</b><br/>GPS Accuracy: Â±${Math.round(accuracy)}m`)
+          .bindPopup(`<b>📍 You Are Here</b><br/>GPS Accuracy: ±${Math.round(accuracy)}m`)
           .openPopup();
 
         userMarkerRef.current = marker;
@@ -309,15 +309,15 @@ export default function MapView({
             className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-slate-700 outline-none focus:border-emerald-600"
           >
             <option value="all">All Categories ({issues.length})</option>
-            <option value="pothole">ðŸ•³ï¸ Potholes</option>
-            <option value="fallen_tree">ðŸŒ³ Fallen Trees</option>
-            <option value="exposed_wires">âš¡ Dangling Wires</option>
-            <option value="garbage">ðŸ—‘ï¸ Garbage Dumps</option>
-            <option value="water_logging">ðŸ¦Ÿ Stagnant Water</option>
-            <option value="broken_footpath">ðŸ§± Broken Footpaths</option>
-            <option value="streetlight">ðŸ’¡ Streetlights</option>
-            <option value="manhole">âš ï¸ Open Manholes</option>
-            <option value="water_leakage">ðŸ’§ Water Leaks</option>
+            <option value="pothole">🕳️ Potholes</option>
+            <option value="fallen_tree">🌳 Fallen Trees</option>
+            <option value="exposed_wires">⚡ Dangling Wires</option>
+            <option value="garbage">🗑️ Garbage Dumps</option>
+            <option value="water_logging">🌊 Stagnant Water</option>
+            <option value="broken_footpath">🧱 Broken Footpaths</option>
+            <option value="streetlight">💡 Streetlights</option>
+            <option value="manhole">⚠️ Open Manholes</option>
+            <option value="water_leakage">💧 Water Leaks</option>
           </select>
 
           <select
@@ -329,7 +329,7 @@ export default function MapView({
             <option value="pending">Pending</option>
             <option value="in_progress">In Progress</option>
             <option value="resolved">Resolved</option>
-            <option value="overdue">ðŸš¨ Overdue SLA</option>
+            <option value="overdue">🚨 Overdue SLA</option>
           </select>
 
           {/* Live GPS Locate Me Button */}
@@ -340,7 +340,7 @@ export default function MapView({
             className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-[#1E2328] font-bold rounded-lg shadow-sm transition-all flex items-center space-x-1 ml-1"
           >
             <Crosshair className={`w-3.5 h-3.5 ${isLocatingUser ? 'animate-spin' : ''}`} />
-            <span>{isLocatingUser ? 'Locating...' : 'ðŸ“ Center on My Location'}</span>
+            <span>{isLocatingUser ? 'Locating...' : '📍 Center on My Location'}</span>
           </button>
         </div>
 
@@ -371,12 +371,12 @@ export default function MapView({
                 onClick={() => setSelectedIssue(null)}
                 className="text-[#6B6860] hover:text-slate-600 p-1 font-bold text-sm"
               >
-                âœ•
+                ✕
               </button>
             </div>
 
             <p className="text-slate-600 leading-relaxed line-clamp-2">{selectedIssue.description}</p>
-            <div className="text-[11px] text-emerald-700 font-semibold">ðŸ“ {selectedIssue.zone_name} â€¢ {selectedIssue.department}</div>
+            <div className="text-[11px] text-emerald-700 font-semibold">📍 {selectedIssue.zone_name} • {selectedIssue.department}</div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <button

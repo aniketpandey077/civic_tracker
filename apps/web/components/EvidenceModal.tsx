@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { X, Upload, CheckCircle2, ShieldCheck, Camera, Sparkles } from 'lucide-react';
@@ -72,7 +72,7 @@ export default function EvidenceModal({
             </span>
           </div>
           <p className="text-xs text-[#6B6860] mt-0.5">
-            DOCKET <span className="font-bold text-orange-400">{issue.complaint_number}</span> â€¢ {issue.zone_name.toUpperCase()}
+            DOCKET <span className="font-bold text-orange-400">{issue.complaint_number}</span> • {issue.zone_name.toUpperCase()}
           </p>
         </div>
 

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { X, AlertTriangle, Share2, ShieldAlert, Sparkles, Building2 } from 'lucide-react';
@@ -72,7 +72,7 @@ export default function EscalationGraphicModal({
             {/* Overdue Badge */}
             <div className="absolute top-3 left-3 bg-red-600/90 backdrop-blur border border-red-400 px-3 py-1.5 rounded-xl shadow-lg">
               <span className="text-xs font-black uppercase tracking-wider block">
-                ðŸš¨ {daysElapsed} DAYS UNRESOLVED
+                🚨 {daysElapsed} DAYS UNRESOLVED
               </span>
               <span className="text-[10px] text-red-100 font-semibold">Exceeded 15-Day Public Target</span>
             </div>
@@ -82,7 +82,7 @@ export default function EscalationGraphicModal({
               <div className="inline-flex items-center space-x-1.5 bg-white backdrop-blur px-2.5 py-1 rounded-lg text-xs border border-[#C9C4BA]">
                 <Building2 className="w-3.5 h-3.5 text-[#D95F02]" />
                 <span className="font-bold text-[#1E2328]">{issue.zone_name}</span>
-                <span className="text-[#6B6860]">â€¢</span>
+                <span className="text-[#6B6860]">•</span>
                 <span className="text-[#176B3A] font-semibold">{issue.department}</span>
               </div>
               <p className="text-xs font-bold text-[#1E2328] line-clamp-1">{issue.title}</p>

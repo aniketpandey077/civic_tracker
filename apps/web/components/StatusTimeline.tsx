@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { CheckCircle2, Clock, Circle, AlertTriangle, ShieldCheck } from 'lucide-react';
@@ -96,7 +96,7 @@ export default function StatusTimeline({
                         hour: '2-digit',
                         minute: '2-digit',
                       })}{' '}
-                      â€¢ {new Date(matchingHistory.created_at).toLocaleDateString()}
+                      • {new Date(matchingHistory.created_at).toLocaleDateString()}
                     </span>
                   )}
                 </div>
