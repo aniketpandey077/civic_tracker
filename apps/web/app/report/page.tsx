@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import ReportForm from '@/components/ReportForm';
-import { Camera, ShieldCheck, Sparkles, LogIn, Lock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Camera, ShieldCheck, Sparkles, LogIn, Lock, CheckCircle2, ArrowRight, ArrowLeft, FileText } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import LoginModal from '@/components/LoginModal';
 
@@ -87,7 +88,26 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16 px-4 sm:px-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-6">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#1A56A4] dark:hover:text-blue-400 bg-white dark:bg-[#151C2C] px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all hover:-translate-x-0.5 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#1A56A4]" />
+          <span>← Back to Home</span>
+        </Link>
+
+        <Link
+          href="/my-complaints"
+          className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#1A56A4] bg-white dark:bg-[#151C2C] px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>My Reports</span>
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center space-x-2 bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4]/40 text-xs font-semibold px-4 py-1.5 rounded-full shadow-xs">

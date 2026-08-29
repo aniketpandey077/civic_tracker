@@ -164,17 +164,25 @@ export default function TrackComplaintPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      <div className="flex items-center justify-between">
-        <Link
-          href="/my-complaints"
-          className="inline-flex items-center space-x-2 text-xs font-bold text-slate-300 hover:text-amber-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Return to Docket Ledger</span>
-        </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center space-x-2">
+          <Link
+            href="/my-complaints"
+            className="inline-flex items-center space-x-2 text-xs font-black text-slate-200 hover:text-amber-400 bg-slate-900/90 hover:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-700 shadow-sm transition-all hover:-translate-x-0.5"
+          >
+            <ArrowLeft className="w-4 h-4 text-amber-400" />
+            <span>← Back to My Reports</span>
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-400 hover:text-white bg-slate-900/60 px-3.5 py-2 rounded-2xl border border-slate-800 transition-colors"
+          >
+            <span>Home</span>
+          </Link>
+        </div>
 
         {justCreated && (
-          <span className="inline-flex items-center space-x-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/90 px-3 py-1 rounded-full border border-emerald-700">
+          <span className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-300 bg-emerald-950/90 px-3.5 py-1.5 rounded-full border border-emerald-700 shadow-md">
             <CheckCircle className="w-4 h-4 text-emerald-400" />
             <span>Docket Logged in Municipal Registry</span>
           </span>

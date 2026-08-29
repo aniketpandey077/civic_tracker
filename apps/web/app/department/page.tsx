@@ -18,7 +18,8 @@ import {
   Filter,
   ShieldCheck,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from 'lucide-react';
 import { getStoredIssues, updateIssueStatus, saveStoredIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
@@ -131,6 +132,33 @@ export default function DepartmentResolverPage() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 text-xs font-black text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 bg-white dark:bg-[#151C2C] px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all hover:-translate-x-0.5 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-emerald-600" />
+          <span>← Back to Home</span>
+        </Link>
+
+        <div className="flex items-center space-x-2">
+          <Link
+            href="/map"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 bg-white dark:bg-[#151C2C] px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all"
+          >
+            <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+            <span>GIS Map</span>
+          </Link>
+          <Link
+            href="/my-complaints"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-emerald-600 bg-white dark:bg-[#151C2C] px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all"
+          >
+            <span>My Reports</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Resolver Header Banner */}
       <div className="bg-white dark:bg-[#151C2C] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-7 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1">

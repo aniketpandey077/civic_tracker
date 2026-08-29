@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { X, Award, Shield, CheckCircle, Download, Printer, Sparkles, Building2, MapPin, QrCode } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { X, Award, Shield, CheckCircle, Download, Printer, Sparkles, Building2, MapPin, QrCode, ArrowLeft } from 'lucide-react';
 import { GovtCertificateRecord } from '@/lib/civicScore';
 
 interface GovtCertificateModalProps {
@@ -17,6 +17,17 @@ export default function GovtCertificateModal({
 }: GovtCertificateModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !certificate) return null;
 
   const handlePrint = () => {
@@ -24,22 +35,37 @@ export default function GovtCertificateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto animate-in fade-in">
-      <div className="bg-white dark:bg-[#111827] text-slate-900 dark:text-white max-w-2xl w-full rounded-3xl border-2 border-amber-400 shadow-2xl overflow-hidden relative my-6">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto animate-in fade-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-[#111827] text-slate-900 dark:text-white max-w-2xl w-full rounded-3xl border-2 border-amber-400 shadow-2xl overflow-hidden relative my-6"
+      >
         
         {/* Modal Top Actions */}
-        <div className="flex items-center justify-between px-6 py-3 bg-amber-500/10 border-b border-amber-400/30">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-amber-500/10 border-b border-amber-400/30">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+
           <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 font-extrabold text-xs uppercase tracking-wider">
             <Award className="w-4 h-4" />
-            <span>Official Government Municipal Certificate</span>
+            <span>Government Certificate</span>
           </div>
+
           <div className="flex items-center space-x-2">
             <button
               onClick={handlePrint}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / Save PDF</span>
+              <span>Print / PDF</span>
             </button>
             <button
               onClick={onClose}
@@ -140,6 +166,16 @@ export default function GovtCertificateModal({
             </div>
           </div>
 
+        </div>
+
+        {/* Bottom Back / Done Button */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+          >
+            Close & Return to Dashboard
+          </button>
         </div>
 
       </div>

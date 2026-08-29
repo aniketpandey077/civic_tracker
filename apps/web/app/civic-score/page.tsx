@@ -19,7 +19,8 @@ import {
   Calendar,
   Download,
   Printer,
-  ChevronRight
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import {
@@ -94,8 +95,36 @@ export default function CivicScorePage() {
   };
 
   return (
-    <div className="space-y-8 pb-16 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto">
       
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#1A56A4] dark:hover:text-blue-400 bg-white dark:bg-[#151C2C] px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all hover:-translate-x-0.5 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#1A56A4] dark:text-blue-400" />
+          <span>← Back to Home</span>
+        </Link>
+
+        <div className="flex items-center space-x-2">
+          <Link
+            href="/my-complaints"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-[#151C2C] px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>My Reports</span>
+          </Link>
+
+          <Link
+            href="/report"
+            className="inline-flex items-center space-x-1.5 text-xs font-black text-white bg-[#B91C1C] hover:bg-[#991B1B] px-4 py-2.5 rounded-2xl shadow-md transition-all active:scale-95"
+          >
+            <span>+ File Grievance</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#1A56A4] via-[#134688] to-[#176B3A] text-white rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden space-y-4 border border-white/10">
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />

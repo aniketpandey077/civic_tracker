@@ -22,7 +22,9 @@ import {
   LogIn,
   Lock,
   ExternalLink,
-  Trash2
+  Trash2,
+  ArrowLeft,
+  Award
 } from 'lucide-react';
 import { getStoredIssues, upvoteIssue, saveStoredIssues, getUserFiledComplaints, getUserUpvotedIssues } from '@/lib/store';
 import { fetchIssues } from '@/lib/db';
@@ -178,7 +180,28 @@ export default function MyComplaintsPage() {
   };
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-6 pb-12">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 text-xs font-black text-slate-700 dark:text-slate-200 hover:text-[#1A56A4] dark:hover:text-blue-400 bg-white dark:bg-[#151C2C] px-4 py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs transition-all hover:-translate-x-0.5 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#1A56A4] dark:text-blue-400" />
+          <span>← Back to Home</span>
+        </Link>
+
+        <div className="flex items-center space-x-2">
+          <Link
+            href="/civic-score"
+            className="inline-flex items-center space-x-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2 rounded-2xl border border-amber-300 dark:border-amber-700 shadow-xs transition-all hover:scale-105"
+          >
+            <Award className="w-3.5 h-3.5 text-amber-500" />
+            <span>Civic Score & Honours</span>
+          </Link>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
