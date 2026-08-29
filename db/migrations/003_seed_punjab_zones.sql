@@ -160,7 +160,7 @@ INSERT INTO admin_zones (id, zone_name, department, city, city_code, boundary, o
 
 -- ─── MOHALI (SAS Nagar) ───────────────────────────────────────────────────────
 (
-  'g1111111-1111-1111-1111-111111111111',
+  'f0111111-1111-1111-1111-111111111111',
   'Phase 7 (IT City, Mohali)',
   'Greater Mohali Area Dev Authority (GMADA)',
   'Mohali', 'MOH',
@@ -168,7 +168,7 @@ INSERT INTO admin_zones (id, zone_name, department, city, city_code, boundary, o
   '@GMADA_Phase7'
 ),
 (
-  'g2222222-2222-2222-2222-222222222222',
+  'f0222222-2222-2222-2222-222222222222',
   'Phase 11 (Residential, Mohali)',
   'GMADA — Roads & Drainage',
   'Mohali', 'MOH',
