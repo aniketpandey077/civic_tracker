@@ -16,6 +16,10 @@ import { useAuth } from '../lib/authContext';
 
 const CATEGORIES: { id: IssueCategory; label: string; code: string; defaultDesc: string }[] = [
   { id: 'pothole', label: 'Pothole & Road Cavity', code: 'RD-POT', defaultDesc: 'Hazardous asphalt road pothole causing vehicle traffic slowdown and safety risk.' },
+  { id: 'permanent_broken_streetlight', label: 'Permanent Broken Streetlight', code: 'LT-PBK', defaultDesc: 'Long-term defective or smashed streetlight pole creating chronic dark accident/crime hotspot.' },
+  { id: 'blind_corner', label: 'Blind Corner / Hazardous Turn', code: 'TR-BLC', defaultDesc: 'Obstructed road junction or sharp blind curve with zero vehicle sightlines causing near-miss collisions.' },
+  { id: 'lack_of_cctv', label: 'Lack of CCTV / Security Blind Spot', code: 'SC-CTV', defaultDesc: 'High-traffic public junction, park, or dark alley vulnerable due to absent municipal surveillance cameras.' },
+  { id: 'overgrown_bushes', label: 'Overgrown Bushes Blocking Sidewalk', code: 'HO-BSH', defaultDesc: 'Dense untrimmed bushes and tree branches forcing pedestrians onto moving traffic lanes.' },
   { id: 'fallen_tree', label: 'Fallen Tree / Road Obstruction', code: 'RD-TRE', defaultDesc: 'Uprooted tree or heavy timber blocking municipal vehicle traffic and transit lane.' },
   { id: 'exposed_wires', label: 'Dangling Electric Conductor', code: 'EL-WIR', defaultDesc: 'Low-hanging or snapped 440V power wire creating immediate electrical and fire hazard.' },
   { id: 'garbage', label: 'Solid Waste Bin Overflow', code: 'WM-GRB', defaultDesc: 'Overflowing municipal garbage bin blocking pedestrian walkway and drainage.' },
@@ -200,8 +204,17 @@ export default function ReportForm() {
     }
 
     // 🚫 AI CANCELLED / FALSE REPORT GUARD
-    if (liveApiData?.detected === false || aiResult?.detected_class === 'Clean Road Surface (No Defect)') {
-      setErrorMsg('🚫 REPORT CANCELLED BY AI: The vision model evaluated this photo and found NO valid civic defect. This report has been cancelled and cannot be registered in municipal dockets.');
+    if (
+      liveApiData?.detected === false ||
+      (liveApiData?.severity !== undefined && liveApiData.severity === 0) ||
+      aiResult?.is_civic_issue === false ||
+      aiResult?.detected_class === 'Clean Road Surface (No Defect)'
+    ) {
+      setErrorMsg(
+        liveApiData?.description ||
+        liveApiData?.rejection_reason ||
+        '🚫 REPORT REJECTED BY AI: The vision model evaluated this photo and found NO valid civic defect. Please upload a clear photo of the actual infrastructure problem.'
+      );
       return;
     }
 

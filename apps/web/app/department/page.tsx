@@ -31,6 +31,7 @@ export default function DepartmentResolverPage() {
   const [mounted, setMounted] = useState(false);
   const [rawIssues, setRawIssues] = useState<CivicIssue[]>([]);
   const [selectedDept, setSelectedDept] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [search, setSearch] = useState<string>('');
   const [selectedIssueForResolution, setSelectedIssueForResolution] = useState<CivicIssue | null>(null);
@@ -93,6 +94,13 @@ export default function DepartmentResolverPage() {
       }
     }
 
+    // Category filter
+    if (selectedCategory !== 'all') {
+      if (issue.category !== selectedCategory) {
+        return false;
+      }
+    }
+
     // Search query
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -151,16 +159,38 @@ export default function DepartmentResolverPage() {
       </div>
 
       {/* Filter and Search Controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="sm:col-span-2 relative">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="sm:col-span-2 lg:col-span-1 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search nearby defects by docket #, ward, category..."
+            placeholder="Search docket #, ward, keyword..."
             className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-600"
           />
+        </div>
+
+        <div>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full py-2.5 px-3 bg-white dark:bg-[#151C2C] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white font-bold outline-none cursor-pointer"
+          >
+            <option value="all">All Problem Types</option>
+            <option value="pothole">🕳️ Potholes & Road Damage</option>
+            <option value="permanent_broken_streetlight">💡 Broken Streetlights</option>
+            <option value="blind_corner">🛑 Blind Corners</option>
+            <option value="lack_of_cctv">📹 Lack of CCTV</option>
+            <option value="overgrown_bushes">🌿 Overgrown Bushes</option>
+            <option value="fallen_tree">🌳 Fallen Trees</option>
+            <option value="exposed_wires">⚡ Dangling Wires</option>
+            <option value="garbage">🗑️ Garbage Dumps</option>
+            <option value="water_logging">🌊 Water Logging</option>
+            <option value="broken_footpath">🧱 Broken Footpaths</option>
+            <option value="manhole">⚠️ Open Manholes</option>
+            <option value="water_leakage">💧 Water Leaks</option>
+          </select>
         </div>
 
         <div>

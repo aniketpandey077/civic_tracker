@@ -189,6 +189,10 @@ export default function MapView({
   const getCategoryEmoji = (cat: string) => {
     switch (cat) {
       case 'pothole': return '🕳️';
+      case 'permanent_broken_streetlight': return '💡';
+      case 'blind_corner': return '🛑';
+      case 'lack_of_cctv': return '📹';
+      case 'overgrown_bushes': return '🌿';
       case 'fallen_tree': return '🌳';
       case 'exposed_wires': return '⚡';
       case 'garbage': return '🗑️';
@@ -315,6 +319,10 @@ export default function MapView({
           >
             <option value="all">All Categories ({issues.length})</option>
             <option value="pothole">🕳️ Potholes</option>
+            <option value="permanent_broken_streetlight">💡 Broken Streetlights</option>
+            <option value="blind_corner">🛑 Blind Corners</option>
+            <option value="lack_of_cctv">📹 Lack of CCTV</option>
+            <option value="overgrown_bushes">🌿 Overgrown Bushes</option>
             <option value="fallen_tree">🌳 Fallen Trees</option>
             <option value="exposed_wires">⚡ Dangling Wires</option>
             <option value="garbage">🗑️ Garbage Dumps</option>
