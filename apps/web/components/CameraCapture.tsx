@@ -229,34 +229,36 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
       return;
     }
 
-    // 1. Immediately pass photo to parent form without blocking user
+    // 1. Set initial pending state while live AI API runs
+    setIsAnalyzing(true);
     const initialResult: DetectionResult = {
-      is_civic_issue: true,
+      is_civic_issue: false,
       detected_class: targetCategory.toUpperCase(),
-      confidence: 0.95,
-      label: '95.0% AI Confidence',
+      confidence: 0.0,
+      label: 'Analyzing photo with AI...',
       category: (selectedCategory as any) || 'pothole',
-      message: 'Photo captured. AI processing running in background...',
+      message: 'Photo captured. AI vision analysis running in background...',
     };
     onPhotoCaptured(displayPhotoUrl, initialResult);
 
-    // 2. Run live backend API fetch asynchronously in background
-    setIsAnalyzing(true);
+    // 2. Run live backend API fetch asynchronously
     try {
       const liveData = await analyzeImageWithLiveApi(imageInput, targetCategory);
       setApiResult(liveData);
 
-      const legacyResult: DetectionResult = {
+      const realResult: DetectionResult = {
         is_civic_issue: liveData.detected,
-        detected_class: liveData.issue_type.toUpperCase(),
+        detected_class: liveData.detected ? liveData.issue_type.toUpperCase() : 'Clean Surface (No Defect)',
         confidence: liveData.detections?.[0]?.confidence ?? (liveData.detected ? 0.95 : 0.0),
-        label: `${((liveData.detections?.[0]?.confidence ?? 0.95) * 100).toFixed(1)}% AI Confidence`,
+        label: liveData.detected
+          ? `${((liveData.detections?.[0]?.confidence ?? 0.95) * 100).toFixed(1)}% AI Confidence`
+          : '0.0% AI Confidence (No Defect Found)',
         category: (selectedCategory as any) || 'pothole',
-        message: liveData.description || `Detected ${liveData.count} defect(s)`,
+        message: liveData.description || (liveData.detected ? `Detected ${liveData.count} defect(s)` : 'Clean surface scanned. No civic defect found.'),
         rawApiData: liveData,
       };
 
-      onPhotoCaptured(displayPhotoUrl, legacyResult, liveData);
+      onPhotoCaptured(displayPhotoUrl, realResult, liveData);
     } catch (err: any) {
       console.warn('Background AI API fetch note:', err);
     } finally {
