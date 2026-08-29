@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { AlertTriangle, CheckCircle2, XCircle, Loader2, Sparkles, ShieldAlert, Target } from 'lucide-react';
@@ -67,29 +67,33 @@ export default function DetectionResults({
   // If no result yet, render nothing
   if (!result) return null;
 
-  // 3. If detected is false -> Clear "No issues found" message
+  // 3. If detected is false -> Clear "Report Cancelled by AI" message
   if (!result.detected) {
     return (
-      <div className="bg-white border border-[#C9C4BA] rounded-2xl p-5 text-[#2D3340] shadow-lg">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-[#C9C4BA] border border-[#C9C4BA] flex items-center justify-center shrink-0">
-            <XCircle className="w-6 h-6 text-[#6B6860]" />
+      <div className="bg-[#FEF2F2] border-2 border-[#B91C1C] rounded-2xl p-5 text-[#B91C1C] shadow-lg">
+        <div className="flex items-start space-x-3">
+          <div className="w-10 h-10 rounded-full bg-red-100 border border-red-300 flex items-center justify-center shrink-0 mt-0.5">
+            <XCircle className="w-6 h-6 text-[#B91C1C]" />
           </div>
-          <div>
-            <h4 className="text-sm font-bold text-[#1E2328] flex items-center space-x-2">
-              <span>No Issues Found</span>
-              <span className="text-[10px] uppercase font-bold bg-[#C9C4BA] text-[#6B6860] border border-[#C9C4BA] px-2 py-0.5 rounded-full">
-                Clean Image
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h4 className="text-sm font-extrabold text-[#B91C1C] flex items-center space-x-2">
+                <ShieldAlert className="w-4 h-4 text-[#B91C1C]" />
+                <span>REPORT CANCELLED BY AI VALIDATION</span>
+              </h4>
+              <span className="text-[10px] font-mono-data font-bold bg-[#B91C1C] text-white px-2 py-0.5 rounded-full">
+                False / Error Report
               </span>
-            </h4>
-            <p className="text-xs text-[#6B6860] mt-0.5">
-              The AI model scanned the photo for <span className="font-semibold text-[#4B5563]">{result.issue_type}</span> defects, but no hazards were detected.
+            </div>
+            <p className="text-xs text-[#991B1B] leading-relaxed font-medium">
+              The AI model scanned the photo for <strong className="font-bold text-[#7F1D1D]">{result.issue_type}</strong>, but NO valid infrastructure defect was detected. <strong>This report cannot be submitted and will not be listed in municipal dockets.</strong>
             </p>
           </div>
         </div>
       </div>
     );
   }
+
 
   // 4. Overall severity badge color calculations:
   // - Green under 30

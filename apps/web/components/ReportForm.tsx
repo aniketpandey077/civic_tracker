@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -198,7 +198,14 @@ export default function ReportForm() {
       return;
     }
 
+    // 🚫 AI CANCELLED / FALSE REPORT GUARD
+    if (liveApiData?.detected === false || (aiResult && aiResult.is_civic_issue === false)) {
+      setErrorMsg('🚫 REPORT CANCELLED BY AI: The vision model evaluated this photo and found NO valid civic defect. This report has been cancelled and cannot be registered in municipal dockets.');
+      return;
+    }
+
     setIsSubmitting(true);
+
 
     try {
       const geo = resolvedAddress || await reverseGeocodeReal(latitude, longitude);

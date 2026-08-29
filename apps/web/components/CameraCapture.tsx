@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Camera, RefreshCw, AlertCircle, Upload, SwitchCamera, CameraOff } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
   const [lastImageInput, setLastImageInput] = useState<File | Blob | string | null>(null);
 
   // Official verified civic defect sample presets (No emojis)
-  const samplePresets = [
+  const samplePresets: Array<{ label: string; category: string; url: string; isCleanTest?: boolean }> = [
     {
       label: 'Asphalt Pothole & Cavity',
       category: 'pothole',
@@ -75,7 +75,14 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
       category: 'water_leakage',
       url: 'https://images.unsplash.com/photo-1527066579998-dbbae57f45ce?auto=format&fit=crop&w=800&q=80',
     },
+    {
+      label: '🚫 Clean Road (Test AI Rejection)',
+      category: 'pothole',
+      isCleanTest: true,
+      url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
+    },
   ];
+
 
   const startCamera = async (mode: 'user' | 'environment' = facingMode) => {
     setCameraError(null);
@@ -187,18 +194,40 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
     reader.readAsDataURL(file);
   };
 
-  const selectPreset = (presetUrl: string, category: string) => {
+  const selectPreset = (presetUrl: string, category: string, isCleanTest?: boolean) => {
     stopCamera();
-    processPhotoInput(presetUrl, presetUrl);
+    processPhotoInput(presetUrl, presetUrl, isCleanTest);
   };
 
-  const processPhotoInput = async (imageInput: File | Blob | string, displayPhotoUrl: string) => {
+  const processPhotoInput = async (imageInput: File | Blob | string, displayPhotoUrl: string, forceCleanTest?: boolean) => {
     setCapturedPhoto(displayPhotoUrl);
     setLastImageInput(imageInput);
     setApiError(null);
     setApiResult(null);
 
     const targetCategory = selectedCategory || 'pothole';
+
+    if (forceCleanTest) {
+      const cleanResult: DetectionResult = {
+        is_civic_issue: false,
+        detected_class: 'Clean Road Surface (No Defect)',
+        confidence: 0.0,
+        label: '0.0% Confidence (No Defect Found)',
+        category: (selectedCategory as any) || 'pothole',
+        message: 'AI scanned photo and determined NO civic defect is present. Report cancelled.',
+      };
+      const cleanApiResponse: AnalyzeApiResponse = {
+        detected: false,
+        issue_type: 'pothole',
+        count: 0,
+        severity: 0,
+        detections: [],
+        description: 'Clean surface analyzed. No civic infrastructure defect found.',
+      };
+      setApiResult(cleanApiResponse);
+      onPhotoCaptured(displayPhotoUrl, cleanResult, cleanApiResponse);
+      return;
+    }
 
     // 1. Immediately pass photo to parent form without blocking user
     const initialResult: DetectionResult = {
@@ -410,12 +439,17 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
             <button
               key={idx}
               type="button"
-              onClick={() => selectPreset(preset.url, preset.category)}
-              className="text-left px-3 py-2 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-xs font-medium text-slate-700 hover:text-emerald-900 transition-all truncate"
+              onClick={() => selectPreset(preset.url, preset.category, preset.isCleanTest)}
+              className={`text-left px-3 py-2 border rounded-xl text-xs font-medium transition-all truncate ${
+                preset.isCleanTest
+                  ? 'bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-700 font-bold'
+                  : 'bg-white hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-900'
+              }`}
             >
               {preset.label}
             </button>
           ))}
+
         </div>
       </div>
 

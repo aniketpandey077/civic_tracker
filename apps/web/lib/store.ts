@@ -286,12 +286,64 @@ export function attachEvidenceAndUpvote(
   return updated;
 }
 
+export function deleteIssue(issueIdOrComplaintNumber: string): boolean {
+  const issues = getStoredIssues();
+  const filtered = issues.filter(
+    i => i.id !== issueIdOrComplaintNumber && i.complaint_number.toLowerCase() !== issueIdOrComplaintNumber.toLowerCase()
+  );
+  if (filtered.length !== issues.length) {
+    saveStoredIssues(filtered);
+    return true;
+  }
+  return false;
+}
+
 export function updateIssueAiResults(issueId: string, apiResult: AnalyzeApiResponse): CivicIssue | undefined {
   const issues = getStoredIssues();
-  const index = issues.findIndex(i => i.id === issueId || i.complaint_number === issueId);
+  const index = issues.findIndex(i => i.id === issueId || i.complaint_number.toLowerCase() === issueId.toLowerCase());
   if (index === -1) return undefined;
 
   const current = issues[index];
+
+  // 🚫 IF AI CANCELLED / FALSE / ERROR (apiResult.detected === false or count === 0 or severity === 0)
+  if (apiResult.detected === false || apiResult.count === 0 || apiResult.severity === 0) {
+    // Unlist & delete the report automatically!
+    deleteIssue(current.id);
+
+    // Save cancellation notification
+    const notifs = getStoredNotifications();
+    const cancelNotif: NotificationItem = {
+      id: `notif-cancel-${Date.now()}`,
+      type: 'escalation',
+      title: '🚫 Report Cancelled by AI',
+      message: `Docket ${current.complaint_number} was automatically cancelled: AI vision model scanned the photo and detected NO valid civic defect.`,
+      complaint_number: current.complaint_number,
+      read: false,
+      created_at: new Date().toISOString(),
+    };
+    saveStoredNotifications([cancelNotif, ...notifs]);
+
+    // Save cancellation history
+    const history = getStoredHistory();
+    saveStoredHistory([
+      ...history,
+      {
+        id: `h-cancel-${Date.now()}`,
+        issue_id: current.id,
+        new_status: 'cancelled' as any,
+        changed_by: 'YOLOv8 AI Verification Service',
+        department_note: `REPORT CANCELLED: AI model scanned photo and determined NO valid civic defect (${current.category}). Ticket unlisted.`,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    return {
+      ...current,
+      status: 'cancelled' as any,
+      ai_analysis_status: 'failed',
+    };
+  }
+
   const updated: CivicIssue = {
     ...current,
     ai_analysis_status: 'completed',
@@ -306,6 +358,7 @@ export function updateIssueAiResults(issueId: string, apiResult: AnalyzeApiRespo
   saveStoredIssues(issues);
   return updated;
 }
+
 
 export function updateIssueStatus(
   issueId: string,
