@@ -6,7 +6,7 @@
 
 /* ─── CIVIC INFRASTRUCTURE PALETTE ─────────────────────────────── */
 :root {
-  /* Base — concrete/paper */
+  /* Base — Light concrete/paper */
   --civic-bg:       #F0EEE9;
   --civic-surface:  #E8E5DF;
   --civic-border:   #C9C4BA;
@@ -24,6 +24,25 @@
   --civic-red-lt:   #FEF2F2;
 }
 
+.dark {
+  /* Base — Dark slate/charcoal */
+  --civic-bg:       #0B0F19;
+  --civic-surface:  #151C2C;
+  --civic-border:   #232F45;
+  --civic-ink:      #F8FAFC;
+  --civic-muted:    #94A3B8;
+
+  /* Dark Accents */
+  --civic-orange:   #F97316;
+  --civic-orange-lt:rgba(249, 115, 22, 0.15);
+  --civic-blue:     #3B82F6;
+  --civic-blue-lt:  rgba(59, 130, 246, 0.15);
+  --civic-green:    #10B981;
+  --civic-green-lt: rgba(16, 185, 129, 0.15);
+  --civic-red:      #EF4444;
+  --civic-red-lt:   rgba(239, 68, 68, 0.15);
+}
+
 /* ─── BASE ──────────────────────────────────────────────────────── */
 body {
   color: var(--civic-ink);
@@ -32,31 +51,28 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ─── CIVIC CARD ────────────────────────────────────────────────── */
-.civic-card {
+.civic-card, .glass-card {
   background: #FFFFFF;
   border: 1.5px solid var(--civic-border);
   border-radius: 0.75rem;
 }
 
-.civic-card-hover {
+.dark .civic-card, .dark .glass-card {
+  background: var(--civic-surface);
+  border-color: var(--civic-border);
+  color: var(--civic-ink);
+}
+
+.civic-card-hover, .glass-card-hover {
   transition: box-shadow 0.18s ease, border-color 0.18s ease;
 }
-.civic-card-hover:hover {
+.civic-card-hover:hover, .glass-card-hover:hover {
   border-color: var(--civic-orange);
   box-shadow: 0 4px 16px -4px rgba(217, 95, 2, 0.18);
-}
-
-/* Keep glass-card as alias so existing code doesn't break */
-.glass-card {
-  background: #FFFFFF;
-  border: 1.5px solid var(--civic-border);
-  border-radius: 0.75rem;
-}
-.glass-card-hover {
-  transition: box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .glass-card-hover:hover {
   border-color: var(--civic-orange);

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/lib/authContext';
+import { ThemeProvider } from '@/lib/themeContext';
 
 // Both Navbar and Footer use useUserLocation (geolocation + localStorage).
 // ssr: false means they are never server-rendered → eliminates hydration mismatches.
@@ -20,14 +21,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className="bg-[#F0EEE9] text-[#1E2328] antialiased font-sans min-h-screen">
-        <AuthProvider>
-          <Navbar />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {children}
-          </main>
-          <Footer />
-        </AuthProvider>
+      <body className="bg-[#F0EEE9] dark:bg-[#0B0F19] text-[#1E2328] dark:text-[#F8FAFC] antialiased font-sans min-h-screen transition-colors duration-200">
+        <ThemeProvider>
+          <AuthProvider>
+            <Navbar />
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              {children}
+            </main>
+            <Footer />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

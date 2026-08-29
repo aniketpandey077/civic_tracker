@@ -20,6 +20,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import ThemeToggle from './ThemeToggle';
 import { useUserLocation } from '@/lib/useUserLocation';
 import { useAuth } from '@/lib/authContext';
 import LoginModal from './LoginModal';
@@ -41,7 +42,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b-2 border-[#C9C4BA] shadow-sm">
+    <header className="sticky top-0 z-30 bg-white dark:bg-[#151C2C] border-b-2 border-[#C9C4BA] dark:border-[#232F45] shadow-sm transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
 
@@ -52,15 +53,15 @@ export default function Navbar() {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-base tracking-tight text-[#1E2328]">CivicTrack</span>
-                <span className="text-[10px] font-mono-data font-bold bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4]/30 px-2 py-0.5 rounded flex items-center gap-1">
+                <span className="font-extrabold text-base tracking-tight text-[#1E2328] dark:text-[#F8FAFC]">CivicTrack</span>
+                <span className="text-[10px] font-mono-data font-bold bg-[#EEF4FF] dark:bg-blue-950/80 text-[#1A56A4] dark:text-blue-300 border border-[#1A56A4]/30 dark:border-blue-700/50 px-2 py-0.5 rounded flex items-center gap-1">
                   <Radio className="w-2.5 h-2.5 animate-pulse" />
                   <span suppressHydrationWarning>
                     {userLocation.isLoaded ? userLocation.city.toUpperCase() : 'CONNECTING'}
                   </span>
                 </span>
               </div>
-              <p className="text-[11px] text-[#6B6860] font-medium hidden sm:block" suppressHydrationWarning>
+              <p className="text-[11px] text-[#6B6860] dark:text-slate-400 font-medium hidden sm:block" suppressHydrationWarning>
                 {userLocation.wardName
                   ? `${userLocation.wardName} Jurisdiction`
                   : 'Municipal Grievance & SLA Command'}
@@ -79,14 +80,14 @@ export default function Navbar() {
                   href={link.href}
                   className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4]/30'
-                      : 'text-[#6B6860] hover:text-[#1E2328] hover:bg-[#E8E5DF]'
+                      ? 'bg-[#EEF4FF] dark:bg-blue-950/70 text-[#1A56A4] dark:text-blue-400 border border-[#1A56A4]/30 dark:border-blue-700/50'
+                      : 'text-[#6B6860] dark:text-slate-400 hover:text-[#1E2328] dark:hover:text-slate-100 hover:bg-[#E8E5DF] dark:hover:bg-slate-800'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{link.label}</span>
                   {link.tag && (
-                    <span className="text-[9px] font-mono-data bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4]/30 px-1.5 py-0.5 rounded">
+                    <span className="text-[9px] font-mono-data bg-[#EEF4FF] dark:bg-blue-950/70 text-[#1A56A4] dark:text-blue-300 border border-[#1A56A4]/30 px-1.5 py-0.5 rounded">
                       {link.tag}
                     </span>
                   )}
@@ -115,6 +116,7 @@ export default function Navbar() {
               <span>Report</span>
             </Link>
 
+            <ThemeToggle />
             <NotificationBell />
 
             {/* Auth / Profile Button — Always Visible in Navbar */}
@@ -168,7 +170,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-[#C9C4BA] px-4 pt-3 pb-4 space-y-2">
+        <div className="md:hidden bg-white dark:bg-[#151C2C] border-t border-[#C9C4BA] dark:border-[#232F45] px-4 pt-3 pb-4 space-y-2">
           <Link
             href="/report"
             onClick={() => setMobileMenuOpen(false)}
@@ -188,8 +190,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium ${
                   isActive
-                    ? 'bg-[#EEF4FF] text-[#1A56A4] font-bold'
-                    : 'text-[#6B6860] hover:bg-[#E8E5DF] hover:text-[#1E2328]'
+                    ? 'bg-[#EEF4FF] dark:bg-blue-950/70 text-[#1A56A4] dark:text-blue-400 font-bold'
+                    : 'text-[#6B6860] dark:text-slate-400 hover:bg-[#E8E5DF] dark:hover:bg-slate-800 hover:text-[#1E2328] dark:hover:text-white'
                 }`}
               >
                 <div className="flex items-center space-x-2.5">
@@ -197,7 +199,7 @@ export default function Navbar() {
                   <span>{link.label}</span>
                 </div>
                 {link.tag && (
-                  <span className="text-[9px] font-mono-data bg-[#EEF4FF] text-[#1A56A4] border border-[#1A56A4]/30 px-1.5 py-0.5 rounded">
+                  <span className="text-[9px] font-mono-data bg-[#EEF4FF] dark:bg-blue-950 text-[#1A56A4] dark:text-blue-300 border border-[#1A56A4]/30 px-1.5 py-0.5 rounded">
                     {link.tag}
                   </span>
                 )}
