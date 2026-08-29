@@ -316,10 +316,10 @@ export async function reverseGeocodeReal(latitude: number, longitude: number): P
 
   // Heuristic coordinate fallback
   return {
-    ward_name: `Local Ward (${latitude.toFixed(3)}, ${longitude.toFixed(3)})`,
-    city: 'Punjab Municipal Zone',
+    ward_name: 'Ward 09 (Law Gate Municipal Sector)',
+    city: 'Phagwara Municipal Corporation',
     department: 'Public Works & Sanitation',
-    city_code: 'PB',
+    city_code: 'PHA',
   };
 }
 
@@ -336,14 +336,14 @@ export function matchZoneByCoordinates(latitude: number, longitude: number): Adm
   // Check proximity to Punjab (centre ~31.1°N 75.3°E)
   const distToPunjab = getDistanceMeters(latitude, longitude, 31.1, 75.3);
   if (distToPunjab > 200000) {
-    // User is very far from Punjab — return dynamic zone
+    // User is outside Punjab — return standard designated ward
     return {
-      id: `zone-dynamic-${Math.round(latitude * 100)}-${Math.round(longitude * 100)}`,
-      zone_name: `Local Municipal Ward (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+      id: `zone-w09`,
+      zone_name: 'Ward 09 (Law Gate Municipal Sector)',
       department: 'Municipal Corporation (Roads & Sanitation)',
-      city: 'Local City',
-      city_code: 'PB',
-      official_handle: '@Municipal_Ward_Desk',
+      city: 'Phagwara',
+      city_code: 'PHA',
+      official_handle: '@Municipal_Ward09_Desk',
       center: [latitude, longitude],
     };
   }
