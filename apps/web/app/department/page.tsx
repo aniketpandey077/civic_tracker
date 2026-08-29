@@ -38,15 +38,19 @@ export default function DepartmentResolverPage() {
   const userLocation = useUserLocation();
 
   const loadIssues = async () => {
+    const localIssues = getStoredIssues();
     try {
       const dbIssues = await fetchIssues();
       if (dbIssues && dbIssues.length > 0) {
-        saveStoredIssues(dbIssues);
-        setRawIssues(dbIssues);
+        const dbNumbers = new Set(dbIssues.map((i: any) => i.complaint_number));
+        const localOnly = localIssues.filter((i: any) => !dbNumbers.has(i.complaint_number));
+        const merged = [...dbIssues, ...localOnly];
+        saveStoredIssues(merged);
+        setRawIssues(merged);
         return;
       }
     } catch {}
-    setRawIssues(getStoredIssues());
+    setRawIssues(localIssues);
   };
 
   useEffect(() => {

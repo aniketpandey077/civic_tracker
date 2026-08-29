@@ -271,13 +271,13 @@ export default function EvidenceModal({
     setIsSubmitting(true);
 
     try {
-      // 1. Submit to Supabase
+      // 1. Submit to Supabase (correct arg order: issueId, beforeUrl, afterUrl, description, contractorName)
       await adminSubmitEvidence(
         issue.id,
         issue.photo_url,
         afterPhotoUrl,
-        contractorName,
-        description
+        description || `Field repair completed by ${contractorName}. GPS verified within ${gpsDistance ?? 25}m of defect.`,
+        contractorName
       ).catch(() => null);
 
       // 2. Submit to local store

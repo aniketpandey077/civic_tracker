@@ -220,18 +220,21 @@ export default function ReportForm() {
       const now = new Date();
       const deadline = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // 15-day SLA
 
+      const photoFinal = photoUrl || '';
+
       const newIssue: CivicIssue = {
-        id: `issue-${Date.now()}`,
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : `issue-${Date.now()}`,
         complaint_number: complaintNumber,
+        reporter_id: user?.id ?? undefined,
         reporter_name: user?.displayName || user?.email?.split('@')[0] || 'Verified Citizen',
-        zone_id: `zone-${Date.now()}`,
+        zone_id: '',
         zone_name: zoneName,
         department: deptName,
         category,
         title: title || `${category.toUpperCase()} at ${zoneName}`,
         description: description || `Civic issue reported via live camera at ${zoneName}.`,
-        photo_url: photoUrl,
-        additional_photos: [photoUrl],
+        photo_url: photoFinal,
+        additional_photos: photoFinal ? [photoFinal] : [],
         ai_confidence: liveApiData?.detections?.[0]?.confidence ?? aiResult?.confidence ?? 0.95,
         ai_detected_class: liveApiData?.issue_type ? liveApiData.issue_type.toUpperCase() : (aiResult?.detected_class || 'Pothole'),
         ai_analysis_status: liveApiData ? 'completed' : 'analyzing',

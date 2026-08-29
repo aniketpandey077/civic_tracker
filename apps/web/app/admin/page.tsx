@@ -80,13 +80,15 @@ export default function AdminDashboardPage() {
     setLoading(true);
     try {
       const dbIssues = await fetchIssues();
+      const localIssues = getStoredIssues();
       if (dbIssues && dbIssues.length > 0) {
-        saveStoredIssues(dbIssues);
-        setIssues(dbIssues);
+        const dbNumbers = new Set(dbIssues.map(i => i.complaint_number));
+        const localOnly = localIssues.filter(i => !dbNumbers.has(i.complaint_number));
+        const merged = [...dbIssues, ...localOnly];
+        saveStoredIssues(merged);
+        setIssues(merged);
       } else {
-        // Fallback to local store if Supabase table is empty
-        const local = getStoredIssues();
-        setIssues(local);
+        setIssues(localIssues);
       }
       const m = await fetchDashboardMetrics();
       setMetrics(m);

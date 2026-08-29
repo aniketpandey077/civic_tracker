@@ -41,15 +41,21 @@ export default function MyComplaintsPage() {
   const { user, signInWithGoogle } = useAuth();
 
   const loadIssues = async () => {
+    // Merge both Supabase DB issues and local store issues so user sees everything immediately
+    const localIssues = getStoredIssues();
     try {
       const dbIssues = await fetchIssues();
       if (dbIssues && dbIssues.length > 0) {
-        saveStoredIssues(dbIssues);
-        setRawIssues(dbIssues);
+        // Merge: prefer DB records, supplement with local records not yet in DB
+        const dbNumbers = new Set(dbIssues.map(i => i.complaint_number));
+        const localOnly = localIssues.filter(i => !dbNumbers.has(i.complaint_number));
+        const merged = [...dbIssues, ...localOnly];
+        saveStoredIssues(merged);
+        setRawIssues(merged);
         return;
       }
     } catch {}
-    setRawIssues(getStoredIssues());
+    setRawIssues(localIssues);
   };
 
   useEffect(() => {

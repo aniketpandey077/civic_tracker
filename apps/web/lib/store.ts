@@ -68,7 +68,7 @@ export function getStoredIssues(): CivicIssue[] {
     }
   }
 
-  // Filter out any cancelled or non-defect reports automatically
+  // Filter out cancelled reports and reports explicitly flagged as non-defect by AI (severity === 0 means confirmed non-defect, undefined means not yet analyzed — keep those)
   issues = issues.filter((issue) => (issue.status as string) !== 'cancelled' && issue.ai_severity !== 0);
 
   const { issues: checkedIssues, updated } = checkAndTrigger45DayEscalations(issues);

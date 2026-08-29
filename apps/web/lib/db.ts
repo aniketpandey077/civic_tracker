@@ -43,13 +43,20 @@ export async function fetchIssues(): Promise<CivicIssue[]> {
 
 /** Fetch a single issue by complaint number or UUID */
 export async function fetchIssueByNumber(idOrNumber: string): Promise<CivicIssue | null> {
-  // Try complaint_number first, then id
-  const { data, error } = await supabase
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrNumber);
+
+  // Build query safely — avoid passing non-UUID to id.eq which causes Postgres error
+  let query = supabase
     .from('civic_issues')
-    .select(`*, admin_zones ( zone_name, department )`)
-    .or(`complaint_number.ilike.${idOrNumber},id.eq.${idOrNumber}`)
-    .limit(1)
-    .maybeSingle();
+    .select(`*, admin_zones ( zone_name, department )`);
+
+  if (isUuid) {
+    query = query.or(`complaint_number.ilike.${idOrNumber},id.eq.${idOrNumber}`);
+  } else {
+    query = query.ilike('complaint_number', idOrNumber);
+  }
+
+  const { data, error } = await query.limit(1).maybeSingle();
 
   if (error) {
     console.error('[db] fetchIssueByNumber error:', error.message);
