@@ -335,6 +335,69 @@ export default function TrackComplaintPage() {
         </div>
       </div>
 
+      {/* Official Contractor Resolution Evidence Banner */}
+      {(evidence || isResolved) && (
+        <div className="bg-white dark:bg-[#151C2C] border-2 border-emerald-500/80 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-700">
+                Repair Completed & Field Verified
+              </span>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
+                Resolved By: <span className="text-emerald-600 dark:text-emerald-400">{evidence?.contractor_name || evidence?.submitted_by || issue.contractor_name || 'Municipal Engineering Crew'}</span>
+              </h3>
+            </div>
+            {evidence?.submitted_at && (
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                Sealed: {new Date(evidence.submitted_at).toLocaleString()}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">
+                Original Defect (Before)
+              </span>
+              <div className="aspect-video rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-inner">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={evidence?.before_photo_url || issue.photo_url}
+                  alt="Defect Before"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400">
+                Repaired Defect (After Photo)
+              </span>
+              <div className="aspect-video rounded-2xl overflow-hidden border-2 border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/30 shadow-inner">
+                {evidence?.after_photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={evidence.after_photo_url}
+                    alt="Defect Repaired After"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
+                    Awaiting after photo upload
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {evidence?.description && (
+            <p className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <strong className="text-slate-900 dark:text-white">Field Work Log:</strong> {evidence.description}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Grid: Timeline & Official PDF Receipt */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono">
         <StatusTimeline

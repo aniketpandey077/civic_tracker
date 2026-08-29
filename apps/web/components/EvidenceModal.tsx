@@ -54,14 +54,13 @@ export default function EvidenceModal({
   onSubmitted,
 }: EvidenceModalProps) {
   const [contractorName, setContractorName] = useState(
-    existingEvidence?.contractor_name || 'Sharma Infra Contractors (Ayush Sharma)'
+    existingEvidence?.contractor_name || ''
   );
   const [afterPhotoUrl, setAfterPhotoUrl] = useState(
-    existingEvidence?.after_photo_url ||
-      'https://images.unsplash.com/photo-1590402494682-cd3fb53b1f70?auto=format&fit=crop&w=800&q=80'
+    existingEvidence?.after_photo_url || ''
   );
   const [description, setDescription] = useState(
-    existingEvidence?.description || 'Physical repairs completed on-site. Asphalt patched and rolled.'
+    existingEvidence?.description || ''
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
