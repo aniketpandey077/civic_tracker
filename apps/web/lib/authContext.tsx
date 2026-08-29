@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signInWithEmail: (email: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -49,6 +50,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error?.message ?? null };
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
   const verifyOtp = useCallback(async (email: string, token: string) => {
     const { error } = await supabase.auth.verifyOtp({
       email,
@@ -63,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithEmail, verifyOtp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithEmail, signInWithGoogle, verifyOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
