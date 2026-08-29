@@ -198,16 +198,6 @@ export default function ReportForm() {
       return;
     }
 
-    if (nearbyDuplicate) {
-      setErrorMsg(`A complaint (${nearbyDuplicate.issue.complaint_number}) already exists within 50m. Please upvote the existing ticket instead.`);
-      return;
-    }
-
-    if (liveApiData && !liveApiData.detected) {
-      setErrorMsg('AI model detected no civic issues in this photo. Please select or capture a photo showing a civic defect.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -471,8 +461,8 @@ export default function ReportForm() {
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isSubmitting || !photoUrl || !!nearbyDuplicate}
-        className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2"
+        disabled={isSubmitting || !photoUrl}
+        className="w-full py-4 px-4 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 disabled:from-slate-300 disabled:to-slate-300 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg hover:shadow-emerald-600/30 active:scale-98 transition-all flex items-center justify-center space-x-2"
       >
         {isSubmitting ? (
           <span>Submitting Work Order...</span>

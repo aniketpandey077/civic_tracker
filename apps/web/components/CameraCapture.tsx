@@ -358,14 +358,17 @@ export default function CameraCapture({ onPhotoCaptured, selectedCategory }: Cam
         )}
       </div>
 
-      {/* Live Detection API Results Display */}
-      {(isAnalyzing || apiResult || apiError) && (
-        <DetectionResults
-          isLoading={isAnalyzing}
-          error={apiError}
-          result={apiResult}
-          onRetry={handleRetryApi}
-        />
+      {/* Clean Non-Intrusive Photo Confirmation Badge */}
+      {capturedPhoto && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-between shadow-2xs">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            <span>Photo Attached • AI analysis runs in background upon submission</span>
+          </div>
+          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2.5 py-0.5 rounded-full">
+            Ready to Submit
+          </span>
+        </div>
       )}
 
       {/* Hidden processing canvas */}
